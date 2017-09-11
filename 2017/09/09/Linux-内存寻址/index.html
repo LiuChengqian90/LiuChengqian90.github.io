@@ -110,7 +110,7 @@
 <meta property="og:image" content="https://github.com/LiuChengqian90/Study-notes/blob/master/image/Linux/x86%E5%A4%84%E7%90%86%E5%99%A8%E7%9A%84%E5%88%86%E9%A1%B5.jpg?raw=true">
 <meta property="og:image" content="https://github.com/LiuChengqian90/Study-notes/blob/master/image/Linux/Linux%E5%88%86%E9%A1%B5%E6%A8%A1%E5%BC%8F.jpg?raw=true">
 <meta property="og:image" content="https://github.com/LiuChengqian90/Study-notes/blob/master/image/Linux/Linux2.6%E7%9A%84%E5%89%8D768%E4%B8%AA%E9%A1%B5%E6%A1%86%EF%BC%883MB%EF%BC%89.jpg?raw=true">
-<meta property="og:updated_time" content="2017-09-10T14:30:00.797Z">
+<meta property="og:updated_time" content="2017-09-11T07:10:42.861Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Linux 内存寻址">
 <meta name="twitter:description" content="内存地址分类逻辑地址：机器语言指令中用来指定一个操作数或一条指令的地址。每一个逻辑地址都由一个段（segment）和偏移量（offset或displacement）组成，偏移量指明了从段开始的地方到实际地址之间的距离。 线性地址（或 虚拟地址）：一个32位（或64位）无符号整数，在32位系统中可以用来表示高达4GB（0x0000 0000 —— 0xffff ffff）的地址，也就是高达 4 *">
@@ -571,7 +571,7 @@
 <p>相应的段选择符由宏定义。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">__USER_CS、__USER_DS、__KERNEL_CS、__KERNEL_DS</div></pre></td></tr></table></figure>
 <p>为了对内核代码段寻址，内核只需把__KERNEL_CS宏产生的值装进cs段寄存器即可。</p>
-<p>注意，与段相关的线性地址从0开始，达到2^23 - 1的寻址限长。这就意味着在用户态或内核态下的所有进程可以使用相同的逻辑地址。</p>
+<p>注意，与段相关的线性地址从0开始，达到2<sup>23</sup> - 1的寻址限长。这就意味着在用户态或内核态下的所有进程可以使用相同的逻辑地址。</p>
 <p>所有段都从0x0000 0000 开始，那么，在Linux下逻辑地址与线性地址是一致的，即逻辑地址的偏移量字段的值与相应的线性地址的值总是一致的。</p>
 <p>当对指向指令或者数据结构的指针进行保存时，内核不需要为其设置逻辑地址的段选择符，因为cs寄存器就含有当前的段选择符。例如，当内核调用一个函数时，它执行一条call汇编语言指令，该指令仅指定其逻辑地址的偏移量部分，而段选择符不用设置，它已经隐含在cs寄存器中了。因为“在内核态执行”的段只有一种，叫做代码段，由宏<strong>KERNEL_CS定义，所以只要当CPU切换到内核态时将</strong>KERNEL_CS装载进cs就足够了。同样的道理也适用于指向内核数据结构的指针(隐含地使用ds寄存器)以及指向用户数据结构的指针(内核显式地使用es寄存器)。</p>
 <h3 id="Linux-GDT"><a href="#Linux-GDT" class="headerlink" title="Linux GDT"></a>Linux GDT</h3><p>在单处理器系统中只有一个GDT，而在多处理器系统中每个CPU对应一个GDT。所有的GDT都存放在cpu_gdt_table数组中，而所有GDT的地址和它们的大小(当初始化gdtr寄存器时使用)被存放在cpu_gdt_descr数组中。这些符号都在文件arch/i386/kernel/head.S中被定义。</p>
@@ -607,7 +607,7 @@
 </ul>
 <p>线性地址的转换分两步完成，每一步都基于一种转换表，第一种转换表称为页目录表(page directory)，第二种转换表称为页表(page table )。</p>
 <p>页目录 及 页表都分别存放在1个页中（4KB），其中每个表项也都是4个字节。</p>
-<p>使用这种二级模式的目的在于减少每个进程页表所需RAM的数量。如果使用简单的一级页表，那将需要高达2^20个表项(4GB/4KB = 2^20 ，也就是，在每项4个字节时，需要4MB RAM)来表示每个进程的页表(如果进程使用全部4GB线性地址空间)，即使一个进程并不使用那个范围内的所有地址。二级模式通过只为进程实际使用的那些“虚拟内存区”请求页表来减少内存容量。</p>
+<p>使用这种二级模式的目的在于减少每个进程页表所需RAM的数量。如果使用简单的一级页表，那将需要高达2<sup>20</sup>个表项(4GB/4KB = 2<sup>20</sup> ，也就是，在每项4个字节时，需要4MB RAM)来表示每个进程的页表(如果进程使用全部4GB线性地址空间)，即使一个进程并不使用那个范围内的所有地址。二级模式通过只为进程实际使用的那些“虚拟内存区”请求页表来减少内存容量。</p>
 <p>每个活动进程必须有一个分配给它的页目录。不过，没有必要马上为进程的所有页表都分配RAM。只有在进程实际需要一个页表时才给该页表分配RAM会更为有效率。</p>
 <p>正在使用的页目录的物理地址存放在控制寄存器cr3中。</p>
 <p><img src="https://github.com/LiuChengqian90/Study-notes/blob/master/image/Linux/x86%E5%A4%84%E7%90%86%E5%99%A8%E7%9A%84%E5%88%86%E9%A1%B5.jpg?raw=true" alt="img"></p>
@@ -673,12 +673,12 @@
 <h3 id="硬件保护方案"><a href="#硬件保护方案" class="headerlink" title="硬件保护方案"></a>硬件保护方案</h3><p>分页单元和分段单元的保护方案不同。尽管x86处理器允许一个段使用4种可能的特权级别，但与页和页表相关的特权级只有两个，因为特权由User/Supervisor标志所控制。若这个标志为0，只有当CPL小于3(这意味着对于Linux而言，处理器处于内核态)时才能对页寻址。若该标志为1，则总能对页寻址。</p>
 <p>此外，与段的3种存取权限（读、写、执行）不同的是，页的存取权限只有两种（度、写）。如果页目录项或页表项的Read/Write标志等于0，说明相应的页表或页是只读的，否则是可读写的。</p>
 <h3 id="物理地址扩展（PAE）分页机制"><a href="#物理地址扩展（PAE）分页机制" class="headerlink" title="物理地址扩展（PAE）分页机制"></a>物理地址扩展（PAE）分页机制</h3><p>处理器所支持的RAM容量受连接到地址总线上的地址管脚数限制。早期Intel处理器从80386到Pentium使用32位物理地址。从理论上讲，这样的系统上可以安装高达4GB的RAM；而实际上，由于用户进程线性地址空间的需要，内核不能直接对1GB以上的RAM进行寻址。</p>
-<p>然而，大型服务器需要大于4GB的RAM来同时运行数以千计的进程，所以必须扩展32位x86结构所支持的RAM容量。Intel通过在它的处理器上把管脚数从32增加到36已经满足了这些需求。寻址能力可达到2^36 = 64GB。不过，只有引入一种新的分页机制把32位线性地址转换为36位物理地址才能使用所增加的物理地址。</p>
+<p>然而，大型服务器需要大于4GB的RAM来同时运行数以千计的进程，所以必须扩展32位x86结构所支持的RAM容量。Intel通过在它的处理器上把管脚数从32增加到36已经满足了这些需求。寻址能力可达到2<sup>36</sup> = 64GB。不过，只有引入一种新的分页机制把32位线性地址转换为36位物理地址才能使用所增加的物理地址。</p>
 <p>从Pentium Pro处理器开始，Intel引入一种叫做 物理地址扩展（Physical Address Extension, PAE）的机制。另外一种叫做页大小扩展[Page Size Extension (PSE-36)]的机制在Pentium 3处理器中引入，但是Linux并没有采用这种机制。</p>
 <p>通过设置cr4控制寄存器中的物理地址扩展（PAE）标志激活PAE。页目录项中的页大小标志PS启用大尺寸页(在PAE启用时为2MB)。</p>
 <p>Intel为了支持PAE改变了分页机制：</p>
 <ul>
-<li>64GB的RAM被分为2^24个页框（4KB），页表项的物理地址字段从20位扩展到了24位。因为PAE页表项必须包含12个标志位(在前面已描述)和24个物理地址位，总数之和为36，页表项大小从32位变为64位增加了一倍。结果，一个4KB的页表包含512个表项而不是1024个表项。</li>
+<li>64GB的RAM被分为2<sup>24</sup>个页框（4KB），页表项的物理地址字段从20位扩展到了24位。因为PAE页表项必须包含12个标志位(在前面已描述)和24个物理地址位，总数之和为36，页表项大小从32位变为64位增加了一倍。结果，一个4KB的页表包含512个表项而不是1024个表项。</li>
 <li>引入一个叫做页目录指针表(Page Directory Pointer Table, PDPT)的页表新级别，它由4个64位表项组成。</li>
 <li>cr3控制寄存器包含一个27位的页目录指针表(PDPT)基地址字段。因为PDPT存放在RAM的前4GB中，并在32字节(25)的倍数上对齐，因此27位足以表示这种表的基地址。</li>
 <li>当把线性地址映射到4KB的页时(页目录项中的PS标志清0), 32位线性地址按下列方式解释：<ul>
