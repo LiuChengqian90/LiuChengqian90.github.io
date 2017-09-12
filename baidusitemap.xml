@@ -4,6 +4,26 @@
 
     
   <url>
+    <loc>https://liuchengqian90.github.io/2017/09/12/hello-world/</loc>
+    <lastmod>2017-09-12T07:06:10.665Z</lastmod>
+    <data>
+        <display>
+        <title>Hello World</title>
+        <pubTime>2017-09-12T07:06:10.665Z</pubTime>
+        
+        <tag>Testing</tag>
+         
+         
+           
+             
+              <breadCrumb title="Diary" url="https://liuchengqian90.github.io/categories/Diary/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
     <loc>https://liuchengqian90.github.io/2017/09/09/Linux-%E5%86%85%E5%AD%98%E5%AF%BB%E5%9D%80/</loc>
     <lastmod>2017-09-11T07:10:42.861Z</lastmod>
     <data>
@@ -97,26 +117,6 @@
     </url>
 
     
-    
-  <url>
-    <loc>https://liuchengqian90.github.io/2017/09/09/hello-world/</loc>
-    <lastmod>2017-09-08T16:13:59.403Z</lastmod>
-    <data>
-        <display>
-        <title>Hello World</title>
-        <pubTime>2017-09-08T17:24:39.727Z</pubTime>
-        
-        <tag>Testing</tag>
-         
-         
-           
-             
-              <breadCrumb title="Diary" url="https://liuchengqian90.github.io/categories/Diary/"/>
-          
-        </display>
-    </data>
-    </url>
-
     
     
 </urlset>
