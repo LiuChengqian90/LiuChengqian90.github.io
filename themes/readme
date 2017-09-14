@@ -1,0 +1,3 @@
+in next 
+.git has been renamed .git.bak
+so if you want update the themes, rename .git.bak to .git and 'git pull'
