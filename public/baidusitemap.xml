@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+
+    
+  <url>
+    <loc>https://liuchengqian90.github.io/2017/09/09/Linux-%E5%86%85%E5%AD%98%E5%AF%BB%E5%9D%80/</loc>
+    <lastmod>2017-09-13T03:23:28.923Z</lastmod>
+    <data>
+        <display>
+        <title>Linux 内存寻址</title>
+        <pubTime>2017-09-08T16:50:08.000Z</pubTime>
+        
+        <tag>内存寻址</tag>
+         
+        <tag>分段</tag>
+         
+        <tag>分页</tag>
+         
+        <tag>GDT</tag>
+         
+        <tag>LDT</tag>
+         
+         
+           
+             
+              <breadCrumb title="Linux内核" url="https://liuchengqian90.github.io/categories/Linux%E5%86%85%E6%A0%B8/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://liuchengqian90.github.io/2017/09/12/hello-world/</loc>
+    <lastmod>2017-09-12T07:07:32.643Z</lastmod>
+    <data>
+        <display>
+        <title>Hello World</title>
+        <pubTime>2017-09-12T07:07:32.643Z</pubTime>
+        
+        <tag>Testing</tag>
+         
+         
+           
+             
+              <breadCrumb title="Diary" url="https://liuchengqian90.github.io/categories/Diary/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://liuchengqian90.github.io/2017/09/09/%E5%A4%84%E7%90%86%E5%99%A8%E5%8F%91%E5%B1%95%E7%9A%84%E4%B8%A4%E7%A7%8D%E5%A4%84%E7%90%86%E6%A8%A1%E5%BC%8F%EF%BC%9A%E5%AE%9E%E6%A8%A1%E5%BC%8F%E5%92%8C%E4%BF%9D%E6%8A%A4%E6%A8%A1%E5%BC%8F/</loc>
+    <lastmod>2017-09-11T07:05:52.889Z</lastmod>
+    <data>
+        <display>
+        <title>处理器发展的两种处理模式：实模式和保护模式</title>
+        <pubTime>2017-09-08T16:48:42.000Z</pubTime>
+        
+        <tag>实模式</tag>
+         
+        <tag>保护模式</tag>
+         
+         
+           
+             
+              <breadCrumb title="处理器工作方式" url="https://liuchengqian90.github.io/categories/%E5%A4%84%E7%90%86%E5%99%A8%E5%B7%A5%E4%BD%9C%E6%96%B9%E5%BC%8F/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://liuchengqian90.github.io/2017/09/09/Intel-CPU-%E5%8F%91%E5%B1%95%E7%AE%80%E5%8F%B2/</loc>
+    <lastmod>2017-09-08T17:00:02.425Z</lastmod>
+    <data>
+        <display>
+        <title>Intel CPU 发展简史</title>
+        <pubTime>2017-09-08T16:39:05.000Z</pubTime>
+        
+        <tag>CPU</tag>
+         
+        <tag>处理器</tag>
+         
+         
+           
+             
+              <breadCrumb title="CPU发展史" url="https://liuchengqian90.github.io/categories/CPU%E5%8F%91%E5%B1%95%E5%8F%B2/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://liuchengqian90.github.io/2017/09/09/CPU-%E5%AF%84%E5%AD%98%E5%99%A8/</loc>
+    <lastmod>2017-09-08T16:47:31.583Z</lastmod>
+    <data>
+        <display>
+        <title>CPU 寄存器</title>
+        <pubTime>2017-09-08T16:46:05.000Z</pubTime>
+        
+        <tag>CPU</tag>
+         
+        <tag>寄存器</tag>
+         
+         
+           
+             
+              <breadCrumb title="寄存器" url="https://liuchengqian90.github.io/categories/%E5%AF%84%E5%AD%98%E5%99%A8/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+    
+    
+</urlset>
