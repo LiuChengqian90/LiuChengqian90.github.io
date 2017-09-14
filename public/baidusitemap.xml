@@ -4,6 +4,26 @@
 
     
   <url>
+    <loc>https://liuchengqian90.github.io/2017/09/15/hello-world/</loc>
+    <lastmod>2017-09-14T17:39:02.323Z</lastmod>
+    <data>
+        <display>
+        <title>Hello World</title>
+        <pubTime>2017-09-14T17:39:02.322Z</pubTime>
+        
+        <tag>Testing</tag>
+         
+         
+           
+             
+              <breadCrumb title="Diary" url="https://liuchengqian90.github.io/categories/Diary/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
     <loc>https://liuchengqian90.github.io/2017/09/09/Linux-%E5%86%85%E5%AD%98%E5%AF%BB%E5%9D%80/</loc>
     <lastmod>2017-09-13T03:23:28.923Z</lastmod>
     <data>
@@ -25,26 +45,6 @@
            
              
               <breadCrumb title="Linux内核" url="https://liuchengqian90.github.io/categories/Linux%E5%86%85%E6%A0%B8/"/>
-          
-        </display>
-    </data>
-    </url>
-
-    
-  <url>
-    <loc>https://liuchengqian90.github.io/2017/09/12/hello-world/</loc>
-    <lastmod>2017-09-12T07:07:32.643Z</lastmod>
-    <data>
-        <display>
-        <title>Hello World</title>
-        <pubTime>2017-09-12T07:07:32.643Z</pubTime>
-        
-        <tag>Testing</tag>
-         
-         
-           
-             
-              <breadCrumb title="Diary" url="https://liuchengqian90.github.io/categories/Diary/"/>
           
         </display>
     </data>
@@ -103,9 +103,9 @@
         <title>CPU 寄存器</title>
         <pubTime>2017-09-08T16:46:05.000Z</pubTime>
         
-        <tag>CPU</tag>
-         
         <tag>寄存器</tag>
+         
+        <tag>CPU</tag>
          
          
            
