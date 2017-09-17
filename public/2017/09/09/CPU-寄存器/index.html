@@ -115,7 +115,7 @@
 <meta property="og:image" content="http://images2017.cnblogs.com/blog/945387/201709/945387-20170904202910897-491400201.jpg">
 <meta property="og:image" content="http://images2017.cnblogs.com/blog/945387/201709/945387-20170904202916929-782474184.jpg">
 <meta property="og:image" content="http://images2017.cnblogs.com/blog/945387/201709/945387-20170904203616226-760453523.jpg">
-<meta property="og:updated_time" content="2017-09-08T16:47:31.583Z">
+<meta property="og:updated_time" content="2017-09-17T10:55:03.860Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="CPU 寄存器">
 <meta name="twitter:description" content="寄存器是中央处理器内的组成部分，是有限存贮容量的高速存贮部件，它们可用来暂存指令、数据和地址。在中央处理器的控制部件中，包含的寄存器有指令寄存器(IR)和程序计数器(PC)。 　　寄存器是集成电路中非常重要的一种存储单元，通常由D触发器组成。在集成电路设计中，寄存器可分为电路内部使用的寄存器和充当内外部接口的寄存器这两类。内部寄存器不能被外部电路或软件访问，只是为内部电路的实现存储功能或满足电">
@@ -815,7 +815,7 @@
 <li><p>其他寄存器：EIP、TSC等</p>
 <ul>
 <li><p>指令指针指示器–EIP</p>
-<p>32位寄存器，低16位称为IP，用与兼容16位CPU，其内容是下一条要取入CPU的指令在内存中的偏移地址。当一个程序开始运行时，系统把EIP清零，每取入一条指令，EPI自动增加取入CPU的字节数目。所以称EIP为指令指针。</p>
+<p>32位寄存器，低16位称为IP，用于兼容16位CPU，其内容是下一条要取入CPU的指令在内存中的偏移地址。当一个程序开始运行时，系统把EIP清零，每取入一条指令，EPI自动增加取入CPU的字节数目。所以称EIP为指令指针。</p>
 </li>
 <li><p>时间戳寄存器–TSC</p>
 <p>每个时钟周期时其值加1，重启时清零。通过RDTSC指令读取TSC寄存器，只有当CR4寄存器的TSD位为0时，才可以在任何优先级下执行该指令，否则只能在特权级下执行该指令。</p>

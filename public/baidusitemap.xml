@@ -4,12 +4,34 @@
 
     
   <url>
+    <loc>https://liuchengqian90.github.io/2017/09/09/CPU-%E5%AF%84%E5%AD%98%E5%99%A8/</loc>
+    <lastmod>2017-09-17T10:55:03.860Z</lastmod>
+    <data>
+        <display>
+        <title>CPU 寄存器</title>
+        <pubTime>2017-09-08T16:46:05.000Z</pubTime>
+        
+        <tag>寄存器</tag>
+         
+        <tag>CPU</tag>
+         
+         
+           
+             
+              <breadCrumb title="寄存器" url="https://liuchengqian90.github.io/categories/%E5%AF%84%E5%AD%98%E5%99%A8/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
     <loc>https://liuchengqian90.github.io/2017/09/15/hello-world/</loc>
-    <lastmod>2017-09-14T17:39:02.323Z</lastmod>
+    <lastmod>2017-09-14T17:57:49.848Z</lastmod>
     <data>
         <display>
         <title>Hello World</title>
-        <pubTime>2017-09-14T17:39:02.322Z</pubTime>
+        <pubTime>2017-09-14T17:57:49.847Z</pubTime>
         
         <tag>Testing</tag>
          
@@ -89,28 +111,6 @@
            
              
               <breadCrumb title="CPU发展史" url="https://liuchengqian90.github.io/categories/CPU%E5%8F%91%E5%B1%95%E5%8F%B2/"/>
-          
-        </display>
-    </data>
-    </url>
-
-    
-  <url>
-    <loc>https://liuchengqian90.github.io/2017/09/09/CPU-%E5%AF%84%E5%AD%98%E5%99%A8/</loc>
-    <lastmod>2017-09-08T16:47:31.583Z</lastmod>
-    <data>
-        <display>
-        <title>CPU 寄存器</title>
-        <pubTime>2017-09-08T16:46:05.000Z</pubTime>
-        
-        <tag>寄存器</tag>
-         
-        <tag>CPU</tag>
-         
-         
-           
-             
-              <breadCrumb title="寄存器" url="https://liuchengqian90.github.io/categories/%E5%AF%84%E5%AD%98%E5%99%A8/"/>
           
         </display>
     </data>
