@@ -1,5 +1,6 @@
 ---
-title: about
+#title: about
+title:
 date: 2017-09-08 23:27:39
 ---
 
