@@ -3,11 +3,10 @@ title: Linux 内存寻址
 date: 2017-09-09 00:50:08
 categories: Linux内核
 tags:
+  - 深入理解Linux内核
   - 内存寻址
   - 分段
   - 分页
-  - GDT
-  - LDT
 ---
 
 ## 内存地址分类
