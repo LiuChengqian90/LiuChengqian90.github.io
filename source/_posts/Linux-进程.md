@@ -972,31 +972,16 @@ CLONE_VM标志避免复制调用进程的页表:由于新内核线程无论如�
 
 - 存放在init_task变量中的进程描述符，由INIT_TASK宏完成对它的初始化。
 
-- 存放在init_thread_union变量中的thread_info描述符和内核堆栈，由INiT_THREAD_INFO宏完成对它们的初始化。
+- 存放在init_thread_union变量中的thread_info描述符和内核堆栈，由INIT_THREAD_INFO宏完成对它们的初始化。
 
-- 由进程描述符指向的下列表：
-
-  ——init_mm
-
-  ——init_fs
-
-  ——init_files
-
-  ——init_signals
-
-  ——init_sighand
-
-  这些表分别由下列宏初始化：
-
-  ——INIT_MM
-
-  ——INIT_FS
-
-  ——INIT_FILES
-
-  ——INIT_SIGNALS
-
-  ——INIT_SIGHAND
+  | 线程          | 描述                                       |
+  | ----------- | ---------------------------------------- |
+  | keventd(事件) | 执行keventd_wq工作队列中的函数。                    |
+  | kapmd       | 处理与高级电源管理(APM)相关的事件。                     |
+  | kswapd      | 执行内存回收，在第十七章“周期回收”一节将进行描述。               |
+  | pdflush     | 刷新“脏”缓冲区中的内容到磁盘以回收内存，在第十五章“pdflush内核线程”一 |
+  | kblockd     | 执行kblockd_workqueue工作队列中的函数。周期性地激活块设备驱动程序。 |
+  | ksoftirqd   | 运行tasklet。系统中每个CPU都有这样一个内核线程。            |
 
 - 主内核页全局目录存放在swapper_pg_dir中。
 
@@ -1028,8 +1013,8 @@ Linux使用很多其他内核线程。其中一些在初始化阶段创建，一
 | kapmd           | 处理与高级电源管理(APM)相关的事件。                     |
 | kswapd          | 执行内存回收，在第十七章“周期回收”一节将进行描述。               |
 | pdflush         | 刷新“脏”缓冲区中的内容到磁盘以回收内存，在第十五章“pdflush内核线程”一 |
-| kblockd         | 执行kblockd_workqueue工作队列中的函数。实质上，它周期性地激活块设备驱动程序，将在第十四章“激活块设备驱动程序”一节给予描述。 |
-| ksoftirqd       | 运行tasklet(参看第四章“软中断及tasklet”一节)。系统中每个CPU都有这样一个内核线程。 |
+| kblockd         | 执行kblockd_workqueue工作队列中的函数。实质上，它周期性地激活块设备驱动程序。 |
+| ksoftirqd       | 运行tasklet。系统中每个CPU都有这样一个内核线程。            |
 
 ### 撤销进程
 
