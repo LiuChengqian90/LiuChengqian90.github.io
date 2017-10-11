@@ -230,7 +230,7 @@ GRUB_DISABLE_RECOVERY="true"
 
 1. [官方源](http://elrepo.reloumirrors.net/kernel/el7/x86_64/RPMS/)
 2. [香港源](http://hkg.mirror.rackspace.com/elrepo/kernel/el7/x86_64/RPMS/)
-3. [scientific源](http://ftp.scientificlinux.org)，更具需要选择不同的源，例如，http://ftp.scientificlinux.org/linux/scientific/7.0/x86_64/updates/security/。
+3. [scientific源](http://ftp.scientificlinux.org)，根据需要选择不同的源，例如，http://ftp.scientificlinux.org/linux/scientific/7.0/x86_64/updates/security/。
 
 ### 安装
 
