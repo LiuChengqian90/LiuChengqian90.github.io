@@ -1,6 +1,7 @@
 #deploy 
 hexo clean
-hexo g -d
+hexo g
+hexo d
 
 #backup
 hexo clean
