@@ -699,4 +699,4 @@ gitment:
   repo: gitment
   ClientID: 65375d4616cbf227418e
   ClientSecret: 57637fdfaa3651feedb3508d14dbcb2281759464
-  lazy: false
+  lazy: true
