@@ -15,7 +15,8 @@ timezone: Asia/Shanghai
 #url: https://liuchengqian90.github.io
 url: http://www.chengqian90.com
 root: /
-permalink: :year/:month/:day/:title/
+#permalink: :year/:month/:day/:title/
+permalink: :year/:title/
 permalink_defaults:
 
 # Directory
