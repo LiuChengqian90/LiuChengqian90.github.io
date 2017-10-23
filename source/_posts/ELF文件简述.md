@@ -71,7 +71,7 @@ Section Headers:
   …………
 ```
 
-
+![](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/ELF/ELF%E7%BB%93%E6%9E%84.png)
 
 ELF目标文件格式的最前部是ELF头部（ELF Header），这是确定的。由于目标文件既要参与程序链接又要参与程序执行。出于方便性和效率考虑，目标文件格式提供了两种并行视图，分别反映了这些活动的不同需求。
 
@@ -87,9 +87,41 @@ ELF目标文件格式的最前部是ELF头部（ELF Header），这是确定的�
 
 - 程序头部（Program Headers）
 
-  可选，告诉系统如何创建进程映像。 用来构造进程映像的目标文件必须具有程序头部表，可重定位文件不需要这个表。
+  也称作segments，可选，告诉系统如何创建进程映像。 用来构造进程映像的目标文件必须具有程序头部表，可重定位文件不需要这个表。
+
+**section和segment的区别：**
+
+- section称为节，是指在汇编源码中经由关键字section或segment修饰、逻辑划分的指令或数据区域。
+- segment称为段，是根据目标文件中属性相同的多个section合并后的section集合，这个集合称为segment。我们平时所说的可执行程序内存空间中的代码段和数据段就是指的segment。
+- section主要提供给Linker使用， 而segment提供给Loader用。Linker需要关心.text、.rel.text、.data、.rodata等，因为Linker需要做relocation，而Loader只需要知道Read/Write/Execute的属性
+- executable的ELF文件可以没有section，但必须有segment。ELF文件中间部分是共用的（也就是代码段、数据段等），如shared objects就可以同时拥有Program header table和Section Header Table，这样load完后还可以relocate。
+- 这样设定之后，使得Loader需要做的工作大大减少了，一定程度上提高了程序加载的效率。
+
+（摘自[Section和Segment的区别](http://book.51cto.com/art/201604/509540.htm) 和 [ELF文件中section与segment的区别](http://blog.csdn.net/joker0910/article/details/7655606)）
+
+在大多数情况下，这两者都被混为一谈。
 
 除了 ELF 头部表以外， 其他节区和段都没有规定的顺序。
+
+### ELF数据表示
+
+### ELF Hearder
+
+结构体（在 /usr/include/elf.h 中定义）
+
+### 程序头部（Program Header）
+
+### 节区（Sections）
+
+### 字符串表（String Table）
+
+### 符号表（Symbol Table）
+
+### 重定位信息
+
+
+
+
 
 ## 参考资料
 
