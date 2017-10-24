@@ -340,9 +340,63 @@ typedef struct
 
 所有段的位置及长度如下图所示
 
-![所有段位置和长度.jpg](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/ELF/%E6%89%80%E6%9C%89%E6%AE%B5%E4%BD%8D%E7%BD%AE%E5%92%8C%E9%95%BF%E5%BA%A6.jpg?raw=true)
+![Section Table及所有段位置和长度.jpg](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/ELF/Section%20Table%E5%8F%8A%E6%89%80%E6%9C%89%E6%AE%B5%E4%BD%8D%E7%BD%AE%E5%92%8C%E9%95%BF%E5%BA%A6.jpg?raw=true)
 
 由于对齐的原因，深色部分表示间隔。
+
+**段的类型（sh_type）**  段的名字只是在链接和编译过程中有意义，但它不能真正表示段的类型。对于编译器和链接器来说，主要决定段的属性的是段的类型（sh_type）和段的标志位（sh_flags）。段的类型相关常量以SHT_开头，列举如下
+
+| 常量           | 值    | 含义                  |
+| ------------ | ---- | ------------------- |
+| SHT_NULL     | 0    | 无效段                 |
+| SHT_PROGBITS | 1    | 程序段、代码段、数据段都是这种类型   |
+| SHT_SYMTAB   | 2    | 表示该段的内容为符号表         |
+| SHT_STRTAB   | 3    | 表示该段的内容为字符串表        |
+| SHT_RELA     | 4    | 重定位表。该段包含了重定位信息。    |
+| SHT_HASH     | 5    | 符号表的哈希表             |
+| SHT_DYNAMIC  | 6    | 动态链接信息              |
+| SHT_NOTE     | 7    | 提示性信息               |
+| SHT_NOBITS   | 8    | 表示该段在文件中没内容，比如.bss段 |
+| SHT_REL      | 9    | 该段包含了重定位信息。         |
+| SHT_SHLIB    | 10   | 保留                  |
+| SHT_DYNSYM   | 11   | 动态链接的符号表。           |
+
+**段的标志位（sh_flag）**  段的标志位表示该段在进程虚拟地址空间中的属性。相关常量以SHF_开头。
+
+| 常量            | 值      | 含义                                       |
+| ------------- | ------ | ---------------------------------------- |
+| SHF_WRITE     | 1 << 0 | 表示该段在进程空间中可写                             |
+| SHF_ALLOC     | 1 << 1 | 表示该段在进程空间中须要分配空间。有些包含指示或控制信息的段不需要在进程空间中被分配空间，它们一般不会有这个标志。像代码段、数据段和.bss段都会有这个标志位 |
+| SHF_EXECINSTR | 1 << 2 | 表示该段在进程空间中可以被执行，一般指代码段                   |
+
+对于系统保留段，下表列举了它们的属性。
+
+| Name      | sh_type      | sh_flag                                  |
+| --------- | ------------ | ---------------------------------------- |
+| .bss      | SHT_NOBITS   | SHF_ALLOC + SHF_WRITE                    |
+| .comment  | SHT_PROGBITS | NONE                                     |
+| .data     | SHT_PROGBITS | SHF_ALLOC + SHF_WRITE                    |
+| .data1    | SHT_PROGBITS | SHF_ALLOC + SHF_WRITE                    |
+| .debug    | SHT_PROGBITS | NONE                                     |
+| .dynamic  | SHT_DYNAMIC  | SHF_ALLOC + SHF_WRITE 在有些系统下.dynamic段可能是只读的，所以无SHF_WRITE标志位 |
+| .hash     | SHT_HASH     | SHF_ALLOC                                |
+| .line     | SHT_PROGBITS | NONE                                     |
+| .note     | SHT_NOTE     | NONE                                     |
+| .rodata   | SHT_PROGBITS | SHF_ALLOC                                |
+| .rodata1  | SHT_PROGBITS | SHF_ALLOC                                |
+| .shstrtab | SHT_STRTAB   | NONE                                     |
+| .strtab   | SHT_STRTAB   | 如果该ELF文件中有可装载的段需要用到该字符串表，那么该字符串表也将被装载到进程空间，则有SHF_ALLOC标志位 |
+| .symtab   | SHT_STRTAB   | 同字符串表                                    |
+| .text     | SHT_PROGBITS | SHF_ALLOC + SHF_EXECINSTR                |
+
+**段的链接信息（sh_link、sh_info）** 如果段的类型是与链接相关的（不论是动态链接或静态链接），比如重定位表、符号表等，那么sh_link和sh_info这两个成员所包含的意义如下表所示，对于其他类型的段，这两个成员没有意义。
+
+| sh_type               | sh_link            | sh_info           |
+| --------------------- | ------------------ | ----------------- |
+| SHT_DYNAMIC           | 该段所使用的字符串表在段表中的下标  | 0                 |
+| SHT_HASH              | 该段所使用的符号表在段表中的下标   | 0                 |
+| SHT_REL、SHT_RELA      | 该段所使用的相应符号表在段表中的下标 | 该重定位表所作用的段在段表中的下标 |
+| SHT_SYMTAB、SHT_DYNSYM | 操作系统相关             | 操作系统相关            |
 
 ### 程序头部表（Program Header Table）
 
