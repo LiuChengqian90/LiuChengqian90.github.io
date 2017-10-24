@@ -340,6 +340,10 @@ typedef struct
 
 所有段的位置及长度如下图所示
 
+![所有段位置和长度.jpg](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/ELF/%E6%89%80%E6%9C%89%E6%AE%B5%E4%BD%8D%E7%BD%AE%E5%92%8C%E9%95%BF%E5%BA%A6.jpg?raw=true)
+
+由于对齐的原因，深色部分表示间隔。
+
 ### 程序头部表（Program Header Table）
 
 ### 字符串表（String Table）
