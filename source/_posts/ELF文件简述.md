@@ -322,7 +322,23 @@ typedef struct
 } Elf32_Shdr;
 ```
 
+其各个成员含义如下：
 
+| 成员           | 描述                                       |
+| ------------ | ---------------------------------------- |
+| sh_name      | Section name段名。段名是字符串类型，位于一个叫做“.shstrtab”的字符串表。sh_name是段名在“.shstrtab”中的偏移 |
+| sh_type      | Section type 段的类型                        |
+| sh_flags     | Section flag 段的标志位                       |
+| sh_addr      | Section Address 段虚拟地址。如果该段可以被加载，则sh_addr为该段被加载后在进程地址空间中的虚拟地址 |
+| sh_offset    | Section Offset 段偏移。如果该段存在于文件中，则表示该段在文件中的偏移 |
+| sh_size      | Section Size 段的长度                        |
+| sh_link      | Section Link and Section Information 段链接信息 |
+| sh_addralign | Section Address Alignment 段地址对齐。有些段对段地址对齐有要求，假设有个段刚开始的位置包含了有个double变量，因为x86系统要求浮点数的存储地址必须是本身的整数倍，也就是说保存double变量的地址必须是8字节的整数倍。这样对一个段来说，它的sh_addr必须是8的整数倍。由于地址对齐的数量都是2的指数倍。sh_addralign表示地址对齐数量中的指数，即sh_addralign = 3表示对齐为2的3次方倍。0 或 1表示没有对齐要求。 |
+| sh_entsize   | Section Entry Size 项的长度。有些段包含了一些固定大小的项，比如符号表，它包含的每个符号所占的大小是一样的。对于这种段，sh_entsize表示每个项的大小。0表示该段不包含固定大小的项 |
+
+段的名字对于编译器、链接器是有意义的，但是对于操作系统来说并没有实质的意义，对于操作系统来说，一个段该如何处理取决于它的属性和权限，即由段的类型和段的标志位这两个成员决定。
+
+所有段的位置及长度如下图所示
 
 ### 程序头部表（Program Header Table）
 
