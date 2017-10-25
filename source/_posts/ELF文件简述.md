@@ -561,19 +561,15 @@ typedef struct
 
 ### 重定位表
 
-//待续
-
-
-
-
+To be continued.
 
 ## 参考资料
 
 [可执行文件（ELF）格式的理解](http://www.cnblogs.com/xmphoenix/archive/2011/10/23/2221879.html)
 
-[linux第三次实践：ELF文件格式分析](http://www.cnblogs.com/cdcode/p/5551649.html)
-
 [ELF文件格式分析](https://segmentfault.com/a/1190000007103522)
 
 [ELF文件标准](https://zhuanlan.zhihu.com/p/25072514)
+
+[ELF文件格式详解](http://blog.csdn.net/tenfyguo/article/details/5631561)
 
