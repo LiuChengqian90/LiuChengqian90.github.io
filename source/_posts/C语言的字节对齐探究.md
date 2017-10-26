@@ -263,3 +263,11 @@ sizeof(struct_b) is 16
 **GCC编译代码（无自定义对齐）也可得相同结论。**
 
 **三者同时存在时，也是按照“最小规则”处理。**
+
+## 参考资料
+
+[C语言中的数据对齐](http://www.cnblogs.com/sirlipeng/p/4792062.html)
+
+[C语言的字节对齐及#pragma pack的使用](http://www.cnblogs.com/dabiao/archive/2010/04/15/1712458.html)
+
+[内存对界](http://www.cnblogs.com/chinaxmly/archive/2012/09/30/2709189.html)
