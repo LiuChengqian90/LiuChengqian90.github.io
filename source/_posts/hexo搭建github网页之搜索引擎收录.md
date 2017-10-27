@@ -46,7 +46,7 @@ site:baidu.com
 
   将 baidu_key.site_url 使用CNAME解析到zz.baidu.com。baidu_key为搜索引擎自动分配，site_url为需要验证的网址。
 
-如果是购买的域名，建议用CNAME验证。但是CNAME验证有些问题，描述不正确。应该仿照谷歌方式，将baidu_key进行替换。![百度TXT记录.png](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/hexo%E6%90%AD%E5%BB%BAgithub/%E7%99%BE%E5%BA%A6TXT%E8%AE%B0%E5%BD%95.png?raw=true)
+如果是购买的域名，建议用CNAME验证。但是CNAME验证有些问题，描述不正确。应该是将提供的一串字符（website_url之前的部分）解析到提供的网址。
 
 之后即可验证成功。
 
@@ -80,7 +80,7 @@ site:baidu.com
    之后public目录下，sitemap.xml和baidusitemap.xml这两个文件就是生成的站点地图。可以看一下，其中的列出了网站中所有的文章链接。由于百度屏蔽了github，所以最好购买一个域名。更改地图url，可以更改全局配置文件“url”字段。
 
    ```shell
-   # hexo g
+   # hexo d
    ```
 
    部署至线上。之后可以通过访问 your_site_url/sitemap.xml 和 your_site_url/baidusitemap.xml来确定是否存在站点地图。
