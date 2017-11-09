@@ -7,7 +7,7 @@ tags:
   - 镜像
 ---
 
-###  查询镜像信息
+### 查询镜像信息
 
 ```shell
 # glance image-show 958aba73-cddd-46e6-ae3c-e90ef0f483f1
