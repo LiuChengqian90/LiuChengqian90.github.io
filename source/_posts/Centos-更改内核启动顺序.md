@@ -48,3 +48,4 @@ menuentry 'CentOS Linux (0-rescue-b7ab9add9a761df2e33b16b2038dbf9c) 7 (Core)' --
 saved_entry=CentOS Linux (3.10.0-514.26.2.el7.x86_64) 7 (Core)
 ```
 
+设置生效后需要重启设备才能真正应用。
