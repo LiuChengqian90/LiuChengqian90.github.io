@@ -250,6 +250,10 @@ GRUB_DISABLE_RECOVERY="true"
 # grub2-mkconfig -o /boot/grub2/grub.cfg
 ```
 
+```shell
+Tip: Centos 6.x 仅修改 /etc/grub.conf文件 default 即可。此文件中列出了所有的内核(title),顺序由 0 开始。
+```
+
 ## 删除旧内核
 
 1. 列出当前所用内核
