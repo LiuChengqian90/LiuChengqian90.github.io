@@ -28,7 +28,7 @@ site:baidu.com
 
 进入 [谷歌搜索引擎站点验证](https://www.google.com/webmasters/tools/home?hl=zh-CN)，验证流程比较智能，输入网址之后，登录域名提供商，谷歌会自动添加一条 TXT记录，之后即可完成验证。
 
-![谷歌TXT记录.png](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/hexo%E6%90%AD%E5%BB%BAgithub/%E8%B0%B7%E6%AD%8CTXT%E8%AE%B0%E5%BD%95.png?raw=true)
+![谷歌TXT记录.png](/images/hexo搭建github/谷歌TXT记录.png)
 
 ### 百度验证
 

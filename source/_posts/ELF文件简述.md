@@ -138,11 +138,11 @@ int main(void)
 }
 ```
 
-![ELF结构.png](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/ELF/ELF%E7%BB%93%E6%9E%84.png?raw=true)
+![ELF结构.png](/images/ELF/ELF结构.png)
 
 ELF目标文件格式的最前部是ELF头部（ELF Header），这是确定的。由于目标文件既要参与程序链接又要参与程序执行。出于方便性和效率考虑，目标文件格式提供了两种并行视图，分别反映了这些活动的不同需求。
 
-![不同视图ELF格式.png](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/ELF/%E4%B8%8D%E5%90%8C%E8%A7%86%E5%9B%BEELF%E6%A0%BC%E5%BC%8F.png?raw=true)
+![不同视图ELF格式.png](/images/ELF/不同视图ELF格式.png)
 
 - ELF头部（ELF Header）
 
@@ -339,7 +339,7 @@ typedef struct
 
 所有段的位置及长度如下图所示
 
-![Section Table及所有段位置和长度.jpg](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/ELF/Section%20Table%E5%8F%8A%E6%89%80%E6%9C%89%E6%AE%B5%E4%BD%8D%E7%BD%AE%E5%92%8C%E9%95%BF%E5%BA%A6.jpg?raw=true)
+![Section Table及所有段位置和长度.jpg](/images/ELF/Section Table及所有段位置和长度.jpg)
 
 由于对齐的原因，深色部分表示间隔。
 
