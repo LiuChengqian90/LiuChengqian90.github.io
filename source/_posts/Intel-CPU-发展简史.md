@@ -7,7 +7,7 @@ tags:
   - 处理器
 ---
 
-![处理器发展史.png](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/Intel%20CPU%20%E5%8F%91%E5%B1%95%E7%AE%80%E5%8F%B2/%E5%A4%84%E7%90%86%E5%99%A8%E5%8F%91%E5%B1%95%E5%8F%B2.png?raw=true)
+![处理器发展史.png](/images/Intel CPU 发展简史/处理器发展史.png)
 
 
 
@@ -197,7 +197,7 @@ Northwood是第二代产品，采用0.13微米制程，具有电压低、体积�
 
 摘自 [寻访x86处理器“实模式”和“保护模式”的前世今生](http://blog.chinaunix.net/uid-23069658-id-3569341.html)
 
-![处理器地址线发展.png](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/Intel%20CPU%20%E5%8F%91%E5%B1%95%E7%AE%80%E5%8F%B2/%E5%A4%84%E7%90%86%E5%99%A8%E5%9C%B0%E5%9D%80%E7%BA%BF%E5%8F%91%E5%B1%95.png?raw=true)
+![处理器地址线发展.png](/images/Intel CPU 发展简史/处理器地址线发展.png)
 
  
 

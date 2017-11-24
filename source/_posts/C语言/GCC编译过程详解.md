@@ -70,7 +70,7 @@ gcc所遵循的部分约定规则：
 
 GCC的编译过程可以分为以下四个阶段：**预处理（或预编译）、编译、汇编、链接**，如下图所示：
 
-![GCC编译过程.jpg](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/GCC%E7%BC%96%E8%AF%91%E8%BF%87%E7%A8%8B%E8%AF%A6%E8%A7%A3/GCC%E7%BC%96%E8%AF%91%E8%BF%87%E7%A8%8B.jpg?raw=true)
+![GCC编译过程.jpg](/images/GCC编译过程详解/GCC编译过程.jpg)
 
 以下面代码为例：
 
@@ -231,7 +231,7 @@ test程序调用了printf 函数，这个函数是标准C库中的一个函数�
 
 以上过程可以参考下图：
 
-![GCC编译过程详解.png](https://github.com/LiuChengqian90/LiuChengqian90.github.io/blob/hexo/source/_posts/image_quoted/GCC%E7%BC%96%E8%AF%91%E8%BF%87%E7%A8%8B%E8%AF%A6%E8%A7%A3/GCC%E7%BC%96%E8%AF%91%E8%BF%87%E7%A8%8B%E8%AF%A6%E8%A7%A3.png?raw=true)
+![GCC编译过程详解.png](/images/GCC编译过程详解/GCC编译过程详解.png)
 
 ## 参考资料
 
