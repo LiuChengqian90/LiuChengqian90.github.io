@@ -125,7 +125,7 @@ struct super_block {
 };
 ```
 
-创建、管理和撤销超级块对象的代码位于文件<fs/super.c>中。超级块对象通过alloc_super()函数创建并初始化。在文件系统安装时，文件系统会调用该函数以便从磁盘读取文件系统超级块，并将其信息填充到内存中的超级块对象中。
+创建、管理和撤销超级块对象的代码位于文件<fs/super.c&gt;中。超级块对象通过alloc_super()函数创建并初始化。在文件系统安装时，文件系统会调用该函数以便从磁盘读取文件系统超级块，并将其信息填充到内存中的超级块对象中。
 
 ### 超级块操作
 
@@ -315,7 +315,7 @@ VFS把目录当作文件对待，所以在路径/bin/vi中，bin和vi都属于�
 
 目录项也可包括安装点。在路径/mnt/cdorm/foo中，构成元素/、mnt、cdorm和foo都属于目录项对象。VFS在执行目录操作时(如果需要的话)会现场创建目录项对象。
 
-目录项对象由dentry结构体表示，定义在文件<linux/dcache.h>中。
+目录项对象由dentry结构体表示，定义在文件<linux/dcache.h&gt;中。
 
 ```c
 struct dentry {
@@ -517,7 +517,7 @@ struct file_operations {
 
 内核还使用了另外一些标准数据结构来管理文件系统的其他相关数据。第一个对象是file_system_type，用来描述各种特定文件系统类型，比如ext3、ext4或UDF。第二个结构体是vfsmount，用来描述一个安装文件系统的实例。
 
-因为Linux支持众多不同的文件系统，所以内核必须由一个特殊的结构来描述每种文件系统的功能和行为。file_system_type结构体被定义在<linux/fs.h>
+因为Linux支持众多不同的文件系统，所以内核必须由一个特殊的结构来描述每种文件系统的功能和行为。file_system_type结构体被定义在<linux/fs.h&gt;
 
 ```c
 struct file_system_type {
@@ -548,7 +548,7 @@ struct file_system_type {
 
 当文件系统被实际安装时，将有有个vfsmount结构体在安装点被创建。该结构体用来代表文件系统的的实例——代表一个安装点。
 
-vfsmount结构被定义在<linux/mount.h>中
+vfsmount结构被定义在<linux/mount.h&gt;中
 
 ```c
 struct vfsmount {
@@ -602,7 +602,7 @@ vfsmount结构还保存了在安装时指定的标志信息，该信息存储在
 
 系统中的每一个进程都有自己的一组打开的文件。有三个数据结构将VFS层和系统的进程紧密联系在一起，它们分别是：**file_struct**、**fs_struct**和namespace结构体。
 
-file_struct结构体定义在<linux/fdtable.h>中。该结构体由进程描述符中的files目录项指向。所有与单个进程（pre-process）**相关的信息**（如打开的文件及文件描述符）都包含在其中
+file_struct结构体定义在<linux/fdtable.h&gt;中。该结构体由进程描述符中的files目录项指向。所有与单个进程（pre-process）**相关的信息**（如打开的文件及文件描述符）都包含在其中
 
 ```c
 struct files_struct {
@@ -625,7 +625,7 @@ struct files_struct {
 
 **fd_array数组指针指向已打开的文件对象**。因为NR_OPEN_DEFAULT等于BITS_PER_LONG，在64位机器体系结构中这个宏的值为64，所以该数组可以容纳64个文件对象。如果一个进程所打开的文件对象超过64个，内核将分配一个新数组，井且将fdt指针指向它。所以对适当数量的文件对象的访问会执行得很快，因为它是对静态数组进行的操作：如果一个进程打开的文件数量过多，那么内核就需要建立新数组。所以如果系统中有大量的进程都要打开超过64个文件，为了优化性能，管理员可以适当增大NR_OPEN_DEFAULT的预定义值。
 
-和进程相关的第二个结构体是fs_struct。结构由进程描述符的fs域指向。它**包含文件系统和进程相关的信息**，定义在文件<linux/fs_struct.h>中
+和进程相关的第二个结构体是fs_struct。结构由进程描述符的fs域指向。它**包含文件系统和进程相关的信息**，定义在文件<linux/fs_struct.h&gt;中
 
 ```c
 struct fs_struct {
@@ -637,7 +637,7 @@ struct fs_struct {
 };
 ```
 
-最后一个相关结构体是namespace结构体，它定义在文件<linux/mnt_namespace>中，由进程描述符中的mnt_namespace域指向（现在应该是nsproxy，待确定）。
+最后一个相关结构体是namespace结构体，它定义在文件<linux/mnt_namespace&gt;中，由进程描述符中的mnt_namespace域指向（现在应该是nsproxy，待确定）。
 
 ```c
 struct mnt_namespace {

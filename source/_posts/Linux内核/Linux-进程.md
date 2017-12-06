@@ -3,7 +3,6 @@ title: Linux 进程
 date: 2017-09-20 18:46:11
 categories: Linux内核
 tags:
-  - 深入理解Linux内核
   - 进程
 ---
 

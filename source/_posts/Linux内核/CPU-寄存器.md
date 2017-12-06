@@ -54,7 +54,7 @@ tags:
   标志寄存器（Flags Register，FR）又称程序状态字(Program Status Word,PSW)。这是一个存放条件标志、控制标志寄存器，主要用于反映处理器的状态和运算结果的某些特征及控制指令的执行。
 
   在FR中有意义的有9位，其中6位是状态位，3位是控制位。
-  ![img](http://images2017.cnblogs.com/blog/945387/201709/945387-20170904201107116-1774590873.jpg)
+  ![16位标志寄存器](/images/CPU 寄存器/16位标志寄存器.jpg)
 
 | 标志                        | 描述                                       |
 | ------------------------- | ---------------------------------------- |
@@ -82,7 +82,7 @@ tags:
 
 32位CPU 寄存器及数据结构图：
 
-![img](http://blog.chinaunix.net/attachment/201310/12/27717694_1381559379uuay.png)
+![32位CPU 寄存器及数据结构](/images/CPU 寄存器/32位CPU 寄存器及数据结构.png)
 
 - 通用寄存器（8个）：EAX、EBX、ECX、EDX、ESP、EBP、ESI、EDI
 
@@ -97,7 +97,7 @@ tags:
 
   在16位标志寄存器的基础上增加了几个标志：
 
-![img](http://images2017.cnblogs.com/blog/945387/201709/945387-20170904202623585-1839788830.jpg)
+![EFLAGS](/images/CPU 寄存器/EFLAGS.jpg)
 
  
 
@@ -121,7 +121,7 @@ tags:
   CR0：控制系统的工作模式和处理器的状态；x86\_32的CR0为32bit。X86\_64下为64bit，其中低32bit与x86_32的CR0保持一致，高32bit没有定义，作保留使用，除了bit4其他所有位都是可读可写的。
 
 
-![img](http://images2017.cnblogs.com/blog/945387/201709/945387-20170904202830101-1841642504.jpg)
+![控制寄存器](/images/CPU 寄存器/控制寄存器.jpg)
 
 | 标志                        | 描述                                      |
 | ------------------------- | --------------------------------------- |
@@ -141,11 +141,11 @@ tags:
 
 ​	CR2：存放发生页错误时的虚拟地址
 
-![img](http://images2017.cnblogs.com/blog/945387/201709/945387-20170904202839085-1411938709.jpg)
+![CR2](/images/CPU 寄存器/CR2.jpg)
 
  	CR3：用来存放最高级页目录地址(物理地址），各级页表项中存放的也是物理地址。
 
-![img](http://images2017.cnblogs.com/blog/945387/201709/945387-20170904202910897-491400201.jpg)
+![CR3](/images/CPU 寄存器/CR3.jpg)
 
 | 标志                            | 描述                                       |
 | ----------------------------- | ---------------------------------------- |
@@ -154,14 +154,12 @@ tags:
 
 - Figure 3-4中，不使用PAE技术，有两层页表。最高层为页目录有1024项，占用4KB。page_directory_table base address为物理地址，指向4KB对齐的页目录地址。
 
-- Figure 3-5中，使用PAE技术，三层页表寻址。最高层为页目录指针，4项，占用32B空间。所以  page_directory_table base address为27位，指向32B对齐的页目录指针表。
+- Figure 3-5中，使用PAE技术，三层页表寻址。最高层为页目录指针，4项，占用32B空间。所以  page_directory_table base address为27位，指向32B对齐的页目录指针表。  ​
 
-
-  ​
 
   CR4：一些结构的扩展。表明对于特定的处理器和操作系统执行支持。
 
-![img](http://images2017.cnblogs.com/blog/945387/201709/945387-20170904202916929-782474184.jpg)
+![CR4](/images/CPU 寄存器/CR4.jpg)
 
 | 标志                                       | 描述                                       |
 | ---------------------------------------- | ---------------------------------------- |
@@ -180,7 +178,7 @@ tags:
 
 - 调试寄存器（Debug Register）（8个）：DR0-DR7
 
-![img](http://images2017.cnblogs.com/blog/945387/201709/945387-20170904203616226-760453523.jpg)
+![DR](/images/CPU 寄存器/DR.jpg)
 
  
 
@@ -262,4 +260,4 @@ tags:
 
 [Intel X86 CPU系列的寄存器](http://blog.chinaunix.net/uid-27717694-id-3943419.html)
 
-[CR0-4寄存器介绍](http://blog.sina.com.cn/s/blog_85998e38010122wq.html)
+[CR0-4寄存器介绍](http://blog.sina.com.cn/s/blog_85998e38010122wq.html)EFLAGS
