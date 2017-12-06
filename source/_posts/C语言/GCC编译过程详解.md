@@ -183,7 +183,7 @@ main:
 # as -o test.o test.s
 ```
 
-test.o的内容为机器码，不能以文本形式方便的呈现。利用hexdump 查看如下：
+test.o的内容为机器码，不能以文本形式方便的呈现(不过可以利用 objdump -S file 查看源码反汇编)。利用hexdump 查看如下：
 
 ```shell
 #  hexdump test.o 
