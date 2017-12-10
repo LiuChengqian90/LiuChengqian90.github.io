@@ -9,7 +9,7 @@ tags:
   - 互斥体
 ---
 
-写出每个策略的实现原理。
+本文基于 linux kernel 2.6.35。
 
 ## 原子操作
 
@@ -125,6 +125,7 @@ asm可翻译为 ：
 
    注意：XCHG 和 XADD (以及所有以 'X' 开头的指令)都能够保证在多处理器系统下的原子操作，它们总会宣告一个 "LOCK#" 信号，而不管有没有 LOCK 前缀。
    ```
+   在X86平台上，CPU提供了在指令执行期间对总线加锁的手段。CPU上有一根引线#HLOCK pin连到北桥，如果汇编语言的程序中在一条指令前面加上前缀“LOCK”，经过汇编以后的机器代码就使CPU在执行这条指令的时候把#HLOCK pin的电位拉低，持续到这条指令结束时放开，从而把总线锁住，这样同一总线上别的CPU就暂时不能通过总线访问内存了，保证了这条指令在多处理器环境中的原子性。
 
 2. addl指令
 
@@ -133,7 +134,10 @@ asm可翻译为 ：
    ```
 
    addl指令含义为 将目的操作数和源操作数求和，并将值写到目的操作数。
-   **在x86中，所有指令格式为 “目的操作数在前，源操作数在后”，例如：'addl dest, src'，但是在 GNU 汇编中，所有指令格式为“源操作数在前，目的操作数在后”，即 'addl src, dest'。**
+
+   **DOS/Windows 下的汇编语言，是 Intel 风格的。但在 Unix 和 Linux 系统中，更多采用的还是 AT&T 格式。**
+
+   **AT&T 和 Intel 格式中的源操作数和目标操作数的位置正好相反。在 Intel 汇编格式中，目标操作数在源操作数的左边；而在 AT&T 汇编格式中，目标操作数在源操作数的右边。**
 
    GCC中asm格式为：
 
@@ -408,7 +412,7 @@ include/linux/spinlock.h
 
   ```c
   /*
-  Sparse 的 GCC 扩展，利用 __context__ 来对代码进行检查，并 “第一个参数增加第二个参数的值”
+  Sparse 的 GCC 扩展，利用 __context__ 来对代码进行检查，参数x 的引用计数 +1
   */
   include/linux/compiler.h
   # define __acquire(x)	__context__(x,1)
@@ -488,59 +492,332 @@ include/linux/spinlock.h
   */
   #if (NR_CPUS < 256)
   #define TICKET_SHIFT 8
-  static __always_inline void __ticket_spin_lock(arch_spinlock_t *lock)
-  {
-  	short inc = 0x0100;
-
-  	asm volatile (
-  		LOCK_PREFIX "xaddw %w0, %1\n"
-  		"1:\t"
-  		"cmpb %h0, %b0\n\t"
-  		"je 2f\n\t"
-  		"rep ; nop\n\t"
-  		"movb %1, %b0\n\t"
-  		/* don't need lfence here, because loads are in-order */
-  		"jmp 1b\n"
-  		"2:"
-  		: "+Q" (inc), "+m" (lock->slock)
-  		:
-  		: "memory", "cc");
-  }
   #else
   #define TICKET_SHIFT 16
-  static __always_inline void __ticket_spin_lock(arch_spinlock_t *lock)
-  {
-  	int inc = 0x00010000;
-  	int tmp;
-
-  	asm volatile(LOCK_PREFIX "xaddl %0, %1\n"
-  		     "movzwl %w0, %2\n\t"
-  		     "shrl $16, %0\n\t"
-  		     "1:\t"
-  		     "cmpl %0, %2\n\t"
-  		     "je 2f\n\t"
-  		     "rep ; nop\n\t"
-  		     "movzwl %1, %2\n\t"
-  		     /* don't need lfence here, because loads are in-order */
-  		     "jmp 1b\n"
-  		     "2:"
-  		     : "+r" (inc), "+m" (lock->slock), "=&r" (tmp)
-  		     :
-  		     : "memory", "cc");
-  }
   ```
 
   - 32位
-    1. ​
+    ```c
+    static __always_inline void __ticket_spin_lock(arch_spinlock_t *lock)
+    {
+    	short inc = 0x0100;
+    	asm volatile (
+    		LOCK_PREFIX "xaddw %w0, %1\n"
+    		"1:\t"
+    		"cmpb %h0, %b0\n\t"
+    		"je 2f\n\t"
+    		"rep ; nop\n\t"
+    		"movb %1, %b0\n\t"
+    		/* don't need lfence here, because loads are in-order */
+    		"jmp 1b\n"
+    		"2:"
+    		: "+Q" (inc), "+m" (lock->slock)
+    		:
+    		: "memory", "cc");
+    }
+    ```
+
+    1. "xaddw %w0, %1\n"
+
+       'xaddw '指令含义为 交换后求和，'xaddw SRC , DEST'--->>> (TEMP ← SRC + DEST;SRC ← DEST;DEST ← TEMP;)，'%w0' 在 GCC 编译器中表示 ax 寄存器，'%h0' 代表 ax的高8位，即ah；  '%b0' 代表 ax的低8位，即al。
+
+       此时， ax寄存器中的值为 inc的值，即 0x0100。
+
+       那么，此句含义即为： xaddw %ax, lock->slock。操作之后，tmp = lock->slock + inc; inc = lock->slock;lock->slock = tmp;
+
+       锁初始化时，值为0。经过操作之后，lock->slock = 0x0100，%ax = 0。
+
+    2. '1:' 
+
+       定义一个标号。
+
+    3. "cmpb %h0, %b0\n\t"
+
+       'cmpb' 位比较。'cmpb %ah, %al'，由于 %ax为0，源目操作数相同。
+
+    4. "je 2f\n\t"
+
+       如果上一步比较结果为真（相同），则跳转到标号为'2'的地方，本段中'2'表示退出。
+
+    5. "rep ; nop\n\t"
+
+       此条指令与'pause'指令相同，用于不支持'pause'指令的汇编程序。在不支持超线程的处理器上，就像'nop'一样不做任何事，但在支持超线程的处理器上，它被用作向处理器提示正在执行spinloop以提高性能。
+
+    6. "movb %1, %b0\n\t"
+
+       'movb SRC, DEST'--->>> (DEST ← SRC)，此处为 %al  ←  lock->slock。
+
+    7. "jmp 1b\n"
+
+       跳到标志'1'。
+
+    8. "2:"
+
+       定义一个标号。
+
+    此段含义简单概括为，将锁的值赋给 ax ，然后比较 ax 的高8位和低8位，相同则跳出（锁已经有了新值，其高位已加1，但是低位没变），不同则代表锁已经执行过加锁这一步，那么进入循环，循环中是将 内存中锁的值赋给 al，然后继续比较。为什么仅赋值低8位呢 ？因为 unlock 是 低位加1。
+
+    因此，可理解为，lock 高位加1，就是加锁，低位加1就是解锁。解锁之后不在分析。
+
+
+
   - 64位
 
+    ```c
+    static __always_inline void __ticket_spin_lock(arch_spinlock_t *lock)
+    {
+    	int inc = 0x00010000;
+    	int tmp;
+
+    	asm volatile(LOCK_PREFIX "xaddl %0, %1\n"
+    		     "movzwl %w0, %2\n\t"
+    		     "shrl $16, %0\n\t"
+    		     "1:\t"
+    		     "cmpl %0, %2\n\t"
+    		     "je 2f\n\t"
+    		     "rep ; nop\n\t"
+    		     "movzwl %1, %2\n\t"
+    		     /* don't need lfence here, because loads are in-order */
+    		     "jmp 1b\n"
+    		     "2:"
+    		     : "+r" (inc), "+m" (lock->slock), "=&r" (tmp)
+    		     :
+    		     : "memory", "cc");
+    }
+    ```
+
+    64位与32位原理一样，不过**32位是 高8位 和 低8位进行比较，而64位是 高16位 与 低16位 进行比较**。下面仅仅说明几个指令的含义：
+
+    1. "movzwl %w0, %2\n\t"
+
+       将 %w0 即 eax (64位) 的值赋值到 tmp，但是高16位用0填充，即 低16位赋给 tmp。
+
+    2.  "shrl $16, %0\n\t"
+
+       %0 逻辑右移 16位，即 %0 仅存 高16位。
+
+    之后流程和32位相同。
 
 
-| 15[down vote]()accepted | Remember that `movzwl` copies only the bits in `%ax` into `%edx` filling in the high 16 bits of `%edx`with zeros.So `%edx` always ends up with a positive number less than or equal to 65535.In detail: `-67043552` in hex is `fc00ff20`. So if that is in `%eax`, then `%ax` contains `ff20`. If you move that into `%edx` with zero-extension, then `%edx` gets `0000ff20`. That's 65312. |
-| ----------------------- | ---------------------------------------- |
-|                         |                                          |
+#### spin_lock_bh
+
+之后的函数直接分析SMP系统（x86）。
+
+```c
+include/linux/spinlock.h
+#define raw_spin_lock_bh(lock)		_raw_spin_lock_bh(lock)
+static inline void spin_lock_bh(spinlock_t *lock)
+{
+	raw_spin_lock_bh(&lock->rlock);
+}
+```
+
+```c
+kernel/spinlock.c
+void __lockfunc _raw_spin_lock_bh(raw_spinlock_t *lock)
+{
+	__raw_spin_lock_bh(lock);
+}
+```
+
+```c
+include/linux/spinlock_api_smp.h
+static inline void __raw_spin_lock_bh(raw_spinlock_t *lock)
+{
+	local_bh_disable();
+	preempt_disable();
+	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
+	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
+}
+```
+
+BH 和 非BH区别主要是增加了 函数 "local_bh_disable" ，看一下其定义：
+
+```c
+kernel/softirq.c
+void local_bh_disable(void)
+{
+	__local_bh_disable((unsigned long)__builtin_return_address(0));
+}
+--->>>
+static inline void __local_bh_disable(unsigned long ip)
+{
+	add_preempt_count(SOFTIRQ_OFFSET);
+	barrier();
+}
+```
+
+1. "\_\_builtin_return_address" 接收一个称为 `level` 的参数。这个参数定义希望获取返回地址的调用堆栈级别。例如，如果指定 `level` 为 `0`，那么就是请求当前函数的返回地址。如果指定 `level` 为 `1`，那么就是请求进行调用的函数的返回地址，依此类推。使用 "\_\_builtin_return_address"捕捉返回地址，以便在以后进行跟踪时使用这个地址。
+2. preempt_count 加 本地软中断偏移(SOFTIRQ_OFFSET)，之后可用 宏 'softirq_count()' 进行判断是否已禁用软中断。
+
+#### spin_lock_irq
+
+irq 锁是禁止了硬中断。过程代码不在赘述，直接到最后 多的 "raw_local_irq_disable()"函数：
+
+```c
+arch/x86/include/asm/irqflags.h
+static inline void raw_local_irq_disable(void)
+{
+	native_irq_disable();
+}
+--->>>
+static inline void native_irq_disable(void)
+{
+	asm volatile("cli": : :"memory");
+}
+```
+
+x86架构直接调用 "CLI" 指令。大多数情况下，"CLI"会清除EFLAGS寄存器中的IF标志，并且不会影响其他标志。 清除IF标志会导致处理器**忽略**可屏蔽的外部中断。
+
+#### spin_lock_irqsave
+
+```c
+#define spin_lock_irqsave(lock, flags)				\
+do {								\
+	raw_spin_lock_irqsave(spinlock_check(lock), flags);	\
+} while (0)
+--->>>
+#define raw_spin_lock_irqsave(lock, flags)			\
+	do {						\
+		typecheck(unsigned long, flags);	\
+		flags = _raw_spin_lock_irqsave(lock);	\
+	} while (0)
+```
+
+```c
+include/linux/typecheck.h
+/*检查x是否为type类型*/
+#define typecheck(type,x) \
+({	type __dummy; \
+	typeof(x) __dummy2; \
+	(void)(&__dummy == &__dummy2); \
+	1; \
+})
+```
+
+```c
+kernel/spinlock.c
+unsigned long __lockfunc _raw_spin_lock_irqsave(raw_spinlock_t *lock)
+{
+	return __raw_spin_lock_irqsave(lock);
+}
+--->>>
+include/linux/spinlock_api_smp.h
+static inline unsigned long __raw_spin_lock_irqsave(raw_spinlock_t *lock)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+	preempt_disable();
+	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
+	/*
+	 * On lockdep we dont want the hand-coded irq-enable of
+	 * do_raw_spin_lock_flags() code, because lockdep assumes
+	 * that interrupts are not re-enabled during lock-acquire:
+	 */
+#ifdef CONFIG_LOCKDEP
+	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
+#else
+	do_raw_spin_lock_flags(lock, &flags);
+#endif
+	return flags;
+}
+```
+
+仅分析 宏'local_irq_save()' 及 函数'do_raw_spin_lock_flags()'：
+
+- local_irq_save
+
+  ```c
+  include/linux/irqflags.h
+  #define local_irq_save(flags)			\
+  do {						\
+  	typecheck(unsigned long, flags);	\
+  	raw_local_irq_save(flags);		\
+  	trace_hardirqs_off();			\
+  } while (0)
+  --->>>
+  arch/x86/include/asm/irqflags.h
+  #define raw_local_irq_save(flags)			\
+  	do { (flags) = __raw_local_irq_save(); } while (0)
+  --->>>
+  static inline unsigned long __raw_local_irq_save(void)
+  {
+  	unsigned long flags = __raw_local_save_flags();
+  	raw_local_irq_disable();
+  	return flags;
+  }
+  ```
+
+  ```c
+  static inline unsigned long __raw_local_save_flags(void)
+  {
+  	return native_save_fl();
+  }
+  --->>>
+  static inline unsigned long native_save_fl(void)
+  {
+  	unsigned long flags;
+  	asm volatile("# __raw_save_flags\n\t"
+  		     "pushf ; pop %0"
+  		     : "=rm" (flags)
+  		     : 
+  		     : "memory");
+
+  	return flags;
+  }
+  ```
+
+  1. "# __raw_save_flags\n\t"
+
+     注释。
+
+  2. "pushf"
+
+     将eflags寄存器的内容入栈。
+
+  3. "pop %0"
+
+     栈顶内容载入 目的操作数中，此处为 flags。
+
+  ```c
+  arch/x86/include/asm/irqflags.h
+  static inline void raw_local_irq_disable(void)
+  {
+  	native_irq_disable();
+  }
+  --->>>
+  static inline void native_irq_disable(void)
+  {
+    	/*CLI 指令前面已做介绍*/
+  	asm volatile("cli": : :"memory");
+  }
+  ```
+
+- do_raw_spin_lock_flags
+
+  ```c
+  static inline void
+  do_raw_spin_lock_flags(raw_spinlock_t *lock, unsigned long *flags) __acquires(lock)
+  {
+  	__acquire(lock);
+  	arch_spin_lock_flags(&lock->raw_lock, *flags);
+  }
+  ```
+
+  ```c
+  arch/x86/include/asm/spinlock.h
+  static __always_inline void arch_spin_lock_flags(arch_spinlock_t *lock,
+  						  unsigned long flags)
+  {
+  	arch_spin_lock(lock);
+  }
+  --->>>
+  arch_spin_lock() 之前已经分析过。
+  ```
 
 
+这些函数的对应函数都是其逆操作。
 
 ### 自旋锁和下半部
 
@@ -550,17 +827,233 @@ include/linux/spinlock.h
 
 对于软中断，无论是否同种类型，如果数据被软中断共享，那么它必须得到锁的保护。这是因为，即使是**同种类型的两个软中断也可以同时运行在一个系统的多个处理器上**。但是，**同一处理器上的一个软中断绝不会抢占另一个软中断**，因此，根本投必要禁止下半部。
 
+### 读写自旋锁
 
+#### rwlock_init
 
+```c
+include/linux/rwlock.h
+# define rwlock_init(lock)					\
+	do { *(lock) = __RW_LOCK_UNLOCKED(lock); } while (0)
+```
 
+```c
+include/linux/rwlock_types.h
+#define __RW_LOCK_UNLOCKED(lockname) \
+	(rwlock_t)	{	.raw_lock = __ARCH_RW_LOCK_UNLOCKED,	\
+				RW_DEP_MAP_INIT(lockname) }
+```
 
+```c
+#define RW_LOCK_BIAS		 0x01000000
+#define __ARCH_RW_LOCK_UNLOCKED		{ RW_LOCK_BIAS }
+```
 
+初始化结果为 将 '0x01000000' 赋值给 raw_lock 。
 
-## 读写自旋锁
+#### read_lock
+
+```c
+include/linux/rwlock.h
+#define read_lock(lock)		_raw_read_lock(lock)
+--->>>
+include/linux/rwlock_api_smp.h
+#define _raw_read_lock(lock) __raw_read_lock(lock)
+--->>>
+static inline void __raw_read_lock(rwlock_t *lock)
+{
+	preempt_disable();
+	rwlock_acquire_read(&lock->dep_map, 0, 0, _RET_IP_);
+	LOCK_CONTENDED(lock, do_raw_read_trylock, do_raw_read_lock);
+}
+```
+
+```c
+include/linux/rwlock.h
+# define do_raw_read_lock(rwlock)	\
+	do {__acquire(lock); arch_read_lock(&(rwlock)->raw_lock); } while (0)
+--->>>
+arch/x86/include/asm/spinlock.h
+static inline void arch_read_lock(arch_rwlock_t *rw)
+{
+	asm volatile(LOCK_PREFIX " subl $1,(%0)\n\t"
+		     "jns 1f\n"
+		     "call __read_lock_failed\n\t"
+		     "1:\n"
+		     ::LOCK_PTR_REG (rw) : "memory");
+}
+```
+
+1. " subl $1,(%0)\n\t"
+
+   目的操作数值减1。在 AT&T 汇编格式中，用 '$' 前缀表示一个立即操作数；而在 Intel 汇编格式中，立即数的表示不用带任何前缀。
+
+2. "jns 1f\n"
+
+   指令 JNS  表示 ：如果符号位 (SF)不为1，就跳转。
+
+3. "call __read_lock_failed\n\t"
+
+   调用符号 '__read_lock_failed'，此符号定义在文件"arch/x86/lib/semaphore\_32.S"。
+
+   ```c
+   ENTRY(__read_lock_failed)
+   	CFI_STARTPROC
+   	FRAME
+   2: 	LOCK_PREFIX
+   	incl	(%eax)
+   1:	rep; nop
+   	cmpl	$1,(%eax)
+   	js	1b
+   	LOCK_PREFIX
+   	decl	(%eax)
+   	js	2b
+   	ENDFRAME
+   	ret
+   	CFI_ENDPROC
+   	ENDPROC(__read_lock_failed)
+   ```
+
+   ```c
+   arch/x86/include/asm/dwarf2.h
+   #define CFI_STARTPROC             .cfi_startproc
+   #define CFI_ENDPROC               .cfi_endproc
+
+   .cfi_startproc用于每个函数的开头，这些函数应该在.eh_frame中有一个入口。 它初始化一些内部数据结构。 用.cfi_endproc关闭函数。
+
+   除非.cfi_startproc与参数"simple"一起使用，否则它还会发出一些与体系结构有关的初始CFI指令。
+   ```
+
+   ```c
+   伪代码如下：
+   2:
+   	incl (%eax); // eax 代表 lock ，因为之前减1没有加锁成功,所以先恢复原值。
+   1:
+   	if(lock - 1  < 0)	// write lock 直接减去 0x01000000, 为0,也就是说 write locked则一直循环。
+         goto 1;
+   	decl lock;
+   	if(lock < 0)	// 如果小于0，则说明在decl 之前，又被write 把锁抢占了，那么从头开始
+         goto 2;
+   	return	
+   ```
+
+#### write_lock
+
+```c
+include/linux/rwlock.h
+#define write_lock(lock)	_raw_write_lock(lock)
+--->>>
+include/linux/rwlock_api_smp.h
+#define _raw_write_lock(lock) __raw_write_lock(lock)
+--->>>
+static inline void __raw_write_lock(rwlock_t *lock)
+{
+	preempt_disable();
+	rwlock_acquire(&lock->dep_map, 0, 0, _RET_IP_);
+	LOCK_CONTENDED(lock, do_raw_write_trylock, do_raw_write_lock);
+}
+```
+
+```c
+include/linux/rwlock.h
+# define do_raw_write_lock(rwlock)	\
+	do {__acquire(lock); arch_write_lock(&(rwlock)->raw_lock); } while (0)
+--->>>
+arch/x86/include/asm/spinlock.h
+static inline void arch_write_lock(arch_rwlock_t *rw)
+{
+	asm volatile(LOCK_PREFIX " subl %1,(%0)\n\t"
+		     "jz 1f\n"
+		     "call __write_lock_failed\n\t"
+		     "1:\n"
+		     ::LOCK_PTR_REG (rw), "i" (RW_LOCK_BIAS) : "memory");
+}
+```
+
+```c
+伪代码如下：
+if (0 != (rw->lock - 0x01000000))
+  call __write_lock_failed
+return
+```
+
+```c
+ENTRY(__write_lock_failed)
+	CFI_STARTPROC simple
+	FRAME
+2: 	LOCK_PREFIX
+	addl	$ RW_LOCK_BIAS,(%eax)
+1:	rep; nop
+	cmpl	$ RW_LOCK_BIAS,(%eax)
+	jne	1b
+	LOCK_PREFIX
+	subl	$ RW_LOCK_BIAS,(%eax)
+	jnz	2b
+	ENDFRAME
+	ret
+	CFI_ENDPROC
+	ENDPROC(__write_lock_failed)
+```
+
+write_lock 伪代码和 read_lock 类似，可试着自己分析一下。
+
+#### read_lock_bh
+
+直接上最后的函数
+
+```c
+include/linux/rwlock_api_smp.h
+static inline void __raw_read_lock_bh(rwlock_t *lock)
+{
+	local_bh_disable();
+	preempt_disable();
+	rwlock_acquire_read(&lock->dep_map, 0, 0, _RET_IP_);
+	LOCK_CONTENDED(lock, do_raw_read_trylock, do_raw_read_lock);
+}
+```
+
+函数 'local_bh_disable()' 和 宏 'do_raw_read_lock' 为核心，上面已经分析过。 
+
+#### write_lock_bh
+
+```c
+include/linux/rwlock_api_smp.h
+static inline void __raw_write_lock_bh(rwlock_t *lock)
+{
+	local_bh_disable();
+	preempt_disable();
+	rwlock_acquire(&lock->dep_map, 0, 0, _RET_IP_);
+	LOCK_CONTENDED(lock, do_raw_write_trylock, do_raw_write_lock);
+}
+```
+
+#### read_lock_irq
+
+```c
+static inline void __raw_read_lock_irq(rwlock_t *lock)
+{
+	local_irq_disable();
+	preempt_disable();
+	rwlock_acquire_read(&lock->dep_map, 0, 0, _RET_IP_);
+	LOCK_CONTENDED(lock, do_raw_read_trylock, do_raw_read_lock);
+}
+```
+
+#### write_lock_irq
+
+```c
+static inline void __raw_write_lock_irq(rwlock_t *lock)
+{
+	local_irq_disable();
+	preempt_disable();
+	rwlock_acquire(&lock->dep_map, 0, 0, _RET_IP_);
+	LOCK_CONTENDED(lock, do_raw_write_trylock, do_raw_write_lock);
+}
+```
 
 ## 信号量
 
-## 读写信号量
+### 读写信号量
 
 ## 互斥体
 
@@ -578,7 +1071,7 @@ include/linux/spinlock.h
 
 
 
-参考资料：
+## 参考资料
 
 [GNU Assembler (GAS)手册](https://sourceware.org/binutils/docs-2.29/as/index.html)
 
@@ -592,7 +1085,9 @@ include/linux/spinlock.h
 
 [Linux 内核 LOCK_PREFIX 的含义](http://blog.csdn.net/ture010love/article/details/7663008)
 
+[X86 Assembly/Shift and Rotate](https://en.wikibooks.org/wiki/X86_Assembly/Shift_and_Rotate)
 
+[Linux 汇编语言开发指南](https://www.ibm.com/developerworks/cn/linux/l-assembly/index.html)
 
-
+[学 Win32 汇编](http://www.cnblogs.com/del/archive/2010/04/16/1713886.html)
 
