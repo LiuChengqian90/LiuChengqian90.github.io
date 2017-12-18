@@ -829,6 +829,13 @@ static inline unsigned long __raw_spin_lock_irqsave(raw_spinlock_t *lock)
 
 ### 读写自旋锁
 
+有时候，锁的用途明确的分为读取和写入两个场景。当更新(写入)链表时，不能有其他代码井发地写链表或从链表中读取数据，写操作要求完全互斥。另一方面，当对其检索(读取)链表时，只要其他程序不对链表进行写操作就行了。
+只要没有写操作，多个并发的读操作都是安全的。
+
+当对某个数据结构的操作可以像这样被划分为读/写或者消费者/生产者两种类别时，类似读/写锁这样的机制就很有帮助了。为此，Linux内核提供了专门的读一写自旋锁。这种自旋锁为读和写分别提供了不同的锁。一个或多个读任务可以并发地持有读者锁;相反，用于写的锁最多只能被一个写任务持有，而且此时不能有并发的读操作。有时把读/写锁叫做共享/排斥锁，或者并发/排斥锁，因为这种锁以共亨(对读者而言)和排斥(对写者而言)的形式获得使用。
+
+下面开始分析原理。
+
 #### rwlock_init
 
 ```c
@@ -936,6 +943,8 @@ static inline void arch_read_lock(arch_rwlock_t *rw)
          goto 2;
    	return	
    ```
+
+读锁是减1，值不为负则加锁成功，因此最多可同时有'0x01000000'个读锁，完全足够。但是按照底层代码分析，即使加了读锁，写数据也是有可能的，这就需要内核开发人员必须能够分清需要读还是写。
 
 #### write_lock
 
@@ -1053,7 +1062,182 @@ static inline void __raw_write_lock_irq(rwlock_t *lock)
 
 ## 信号量
 
+Linux中的信号量是一种睡眠锁。如果有一个任务试图获得一个不可用(已经被占用)的信号量时，信号且会将其推进一个等待队列，然后让其睡眠。这时处理器能重获自由，从而去执行其他代码。当持有的信号量可用(被释放)后，处于等待队列中的那个任务将被唤醒，并获得该信号量。
+
+- 由于争用信号量的进程在等待锁重新变为可用时会睡眠，所以信号量适用于锁会被长时间持有的情况。
+- 相反，锁被短时间持有时，使用信号量就不太适宜了。因为睡眠、维护等待队列以及唤醒所花费的开销可能比锁被占用的全部时间还要一长。
+- 由于执行线程在锁被争用时会睡眠，所以只能在进程上下文中才能获取信号量锁，因为在中断上下文中是不能进行调度的。
+- 可以在持有信号量时去睡眠(当然你也可能并不需要睡眠)，因为当其他进程试图获得同一信号量时不会因此而死锁(因为该进程也只是去睡眠而已，而你最终会继续执行的)。
+- 在占用信号量的同时不能占用自旋锁。因为在你等待信号量时可能会睡眠，而在持有自旋锁时是不允许睡眠的。
+
+以上这些结论阐明了信号量和自旋锁在使用上的差异。
+
+信号量可以同时允许任意数量的锁持有者，而自旋锁在一个时刻最多允许一个任务持有它。信号量同时允许的持有者数量可以在声明信号量时指定。这个值称为使用者数量(usage count)或简单地叫数量(count)。通常情况下，信号量和自旋锁一样，在一个时刻仅允许有一个锁持有者。这时计数等于1，这样的信号量被称为二值信号量或互斥信号量(因为它强制进行互斥)。另一方面，初始化时也可以把数量设置为大于1的非0值。这种情况，信号量被称为计数信号童(counting semaphone)，它允许在一个时刻至多有count个锁持有者。计数信号量不能用来进行强制互斥，因为它允许多个执行线程同时访问临界区。相反，这种信号量用来对特定代码加以限制，内核中使用它的机会不多。在使用信号量时，基本上用到的都是互斥信号量(计数等于1的信号量)。
+
+信号量支持两个原子操作P()和V()，这两个名字来自荷兰语Proberen和Vershogen。前者叫做测试操作(字面意思是探查)，后者叫做增加操作。后来的系统把两种操作分别叫做down()和up()。
+
+down()操作通过对信号量计数减1来请求获得一个信号量。如果结果是0或大于0，获得信号量锁，任务就可以进入临界区。如果结果是负数，任务会被放入等待队列，处理器执行其他任务。相反，当临界区中的操作完成后，up()操作用来释放信号量。如果在该信号量上的等待队列不为空，那么处于队列中等待的任务在被唤醒的同时会获得该信号量。
+
+下面开始看代码
+
+### sema_init
+
+```c
+include/linux/semaphore.h
+struct semaphore {
+	raw_spinlock_t		lock;			//原始锁，保护下面的两个数据
+	unsigned int		count;			//可用计数
+	struct list_head	wait_list;		//等待队列
+};
+static inline void sema_init(struct semaphore *sem, int val)
+{
+	static struct lock_class_key __key;
+  	/*核心函数*/
+	*sem = (struct semaphore) __SEMAPHORE_INITIALIZER(*sem, val);
+	lockdep_init_map(&sem->lock.dep_map, "semaphore->lock", &__key, 0);
+}
+--->>>
+#define __SEMAPHORE_INITIALIZER(name, n)				\
+{									\
+	.lock		= __RAW_SPIN_LOCK_UNLOCKED((name).lock),	\
+	.count		= n,						\
+	.wait_list	= LIST_HEAD_INIT((name).wait_list),		\
+}
+--->>>
+__RAW_SPIN_LOCK_UNLOCKED	//之前分析过，这个是 lock 的初始化。
+```
+
+初始化仅仅是将结构体内的3个字段进行初始。
+
+### down
+
+```c
+kernel/semaphore.c
+void down(struct semaphore *sem)
+{
+	unsigned long flags;
+	/*加irqsave锁，防止上下文切换并保护数据*/
+	raw_spin_lock_irqsave(&sem->lock, flags);
+  	/*大于0说明还有可用计数，仅仅减计数即可；
+  	likely-当条件成立时，可优化代码执行速度*/
+	if (likely(sem->count > 0))
+		sem->count--;
+	else
+		__down(sem);
+	raw_spin_unlock_irqrestore(&sem->lock, flags);
+}
+--->>>
+static noinline void __sched __down(struct semaphore *sem)
+{
+  	/*
+  	#define	MAX_SCHEDULE_TIMEOUT	LONG_MAX
+  	#define LONG_MAX	((long)(~0UL>>1))
+  	*/
+	__down_common(sem, TASK_UNINTERRUPTIBLE, MAX_SCHEDULE_TIMEOUT);
+}
+--->>>
+struct semaphore_waiter {
+	struct list_head list;
+	struct task_struct *task;
+	bool up;
+};
+
+static inline int __sched __down_common(struct semaphore *sem, long state,
+								long timeout)
+{
+  	/*task为当前进程描述符*/
+	struct task_struct *task = current;
+	struct semaphore_waiter waiter;
+
+	list_add_tail(&waiter.list, &sem->wait_list);
+	waiter.task = task;
+	waiter.up = false;
+
+	for (;;) {
+      	/*signal_pending_state分析见下面。*/
+		if (signal_pending_state(state, task))
+			goto interrupted;
+		if (unlikely(timeout <= 0))
+			goto timed_out;
+      	/*将当前任务设置为TASK_UNINTERRUPTIBLE状态*/
+		__set_task_state(task, state);
+      	/*unlock之后进行进程切换*/
+		raw_spin_unlock_irq(&sem->lock);
+		timeout = schedule_timeout(timeout);
+      	/*切换回来后重新加锁
+      	判断切换期间是否有信号量释放，没有则继续使任务睡眠*/
+		raw_spin_lock_irq(&sem->lock);
+		if (waiter.up)
+			return 0;
+	}
+
+ timed_out:
+	list_del(&waiter.list);
+	return -ETIME;
+
+ interrupted:
+	list_del(&waiter.list);
+	return -EINTR;
+}
+--->>>
+static inline int signal_pending_state(long state, struct task_struct *p)
+{
+  	/*函数正确返回：
+  	1. 不为 (TASK_INTERRUPTIBLE | TASK_WAKEKILL)
+  	2. TASK_INTERRUPTIBLE 时，没有 要处理的信号  --->>> 信号会打断状态
+  	3. TASK_WAKEKILL 时，没有 未处理的 KILL 信号	--->>> 信号会打断状态
+  	*/
+  	/*若设置状态为 TASK_INTERRUPTIBLE | TASK_WAKEKILL(仅响应致命信号) 则继续，否则退出*/
+	if (!(state & (TASK_INTERRUPTIBLE | TASK_WAKEKILL)))
+		return 0;
+  	/*如果有未处理的信号，则继续，否则退出*/
+	if (!signal_pending(p))
+		return 0;
+	
+  	/*若 state为 TASK_INTERRUPTIBLE
+  	或 存在未处理的KILL信号，则返回 true*/
+	return (state & TASK_INTERRUPTIBLE) || __fatal_signal_pending(p);
+}
+```
+
+down_interruptible、down_killable、down_trylock和down_timeout，这几个函数不在分析，内部函数都分析过，只是状态或timeout重设而已。
+
+### up
+
+```c
+void up(struct semaphore *sem)
+{
+	unsigned long flags;
+
+	raw_spin_lock_irqsave(&sem->lock, flags);
+  	/*等待队列为空，说明没有进程等待此信号量，则增计数即可*/
+	if (likely(list_empty(&sem->wait_list)))
+		sem->count++;
+	else
+		__up(sem);
+	raw_spin_unlock_irqrestore(&sem->lock, flags);
+}
+--->>>
+static noinline void __sched __up(struct semaphore *sem)
+{
+  	/*有进程等待此信号量，那么
+  	1.从等待队列从找出第一个数据
+  	2.从等待队列删除
+  	3.将此队列up置为true-->>down 中的循环条件
+  	4.唤醒函数*/
+	struct semaphore_waiter *waiter = list_first_entry(&sem->wait_list,
+						struct semaphore_waiter, list);
+	list_del(&waiter->list);
+	waiter->up = true;
+	wake_up_process(waiter->task);
+}
+```
+
 ### 读写信号量
+
+与自旋锁类似，信号量也可优化为读写信号量，直接开始分析代码：
+
+
 
 ## 互斥体
 
