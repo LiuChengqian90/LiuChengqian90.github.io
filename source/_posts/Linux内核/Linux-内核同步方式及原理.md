@@ -9,7 +9,7 @@ tags:
   - 互斥体
 ---
 
-本文基于 linux kernel 2.6.35。
+本文基于 linux kernel 3.10.105。
 
 ## 原子操作
 
@@ -1237,15 +1237,786 @@ static noinline void __sched __up(struct semaphore *sem)
 
 与自旋锁类似，信号量也可优化为读写信号量，直接开始分析代码：
 
+#### init_rwsem
 
+```c
+/*此处定义了 两种结构体，根据是否开启RWSEM选项而用不同结构体及实现*/
+#ifdef CONFIG_RWSEM_GENERIC_SPINLOCK //专用锁
+#include <linux/rwsem-spinlock.h> /* use a generic implementation */
+--->>>
+struct rw_semaphore {
+	/*
+	0 为初始状态
+	>0 表示有读者，数量为读者数量
+	-1 表示有写者
+	*/
+	__s32			activity;
+	raw_spinlock_t		wait_lock;
+	struct list_head	wait_list;
+#ifdef CONFIG_DEBUG_LOCK_ALLOC
+	struct lockdep_map dep_map;
+#endif
+};
+#else
+/* All arch specific implementations share the same struct */
+struct rw_semaphore {
+	long			count;
+	raw_spinlock_t		wait_lock;
+	struct list_head	wait_list;
+#ifdef CONFIG_DEBUG_LOCK_ALLOC
+	struct lockdep_map	dep_map;
+#endif
+};
+
+#define init_rwsem(sem)						\
+do {								\
+	static struct lock_class_key __key;			\
+								\
+	__init_rwsem((sem), #sem, &__key);			\
+} while (0)
+```
+
+- rwsem.c
+
+  ```c
+  void __init_rwsem(struct rw_semaphore *sem, const char *name,
+  		  struct lock_class_key *key)
+  {
+  #ifdef CONFIG_DEBUG_LOCK_ALLOC
+  	/*
+  	 * Make sure we are not reinitializing a held semaphore:
+  	 */
+  	debug_check_no_locks_freed((void *)sem, sizeof(*sem));
+  	lockdep_init_map(&sem->dep_map, name, key, 0);
+  #endif
+  	sem->count = RWSEM_UNLOCKED_VALUE;
+  	raw_spin_lock_init(&sem->wait_lock);
+  	INIT_LIST_HEAD(&sem->wait_list);
+  }
+  ```
+
+  和普通信号量相同的初始化。
+
+- rwsem-spinlock.c
+
+  ```C
+  void __init_rwsem(struct rw_semaphore *sem, const char *name,
+  		  struct lock_class_key *key)
+  {
+  #ifdef CONFIG_DEBUG_LOCK_ALLOC
+  	/*
+  	 * Make sure we are not reinitializing a held semaphore:
+  	 */
+  	debug_check_no_locks_freed((void *)sem, sizeof(*sem));
+  	lockdep_init_map(&sem->dep_map, name, key, 0);
+  #endif
+  	sem->activity = 0;
+  	raw_spin_lock_init(&sem->wait_lock);
+  	INIT_LIST_HEAD(&sem->wait_list);
+  }
+  ```
+
+#### down_read
+
+- x86架构 普通实现
+
+  ```c
+  static inline void __down_read(struct rw_semaphore *sem)
+  {
+  	asm volatile("# beginning down_read\n\t"
+  		     LOCK_PREFIX _ASM_INC "(%1)\n\t"
+  		     /* adds 0x00000001 */
+  		     "  jns        1f\n"
+  		     "  call call_rwsem_down_read_failed\n"
+  		     "1:\n\t"
+  		     "# ending down_read\n\t"
+  		     : "+m" (sem->count)
+  		     : "a" (sem)
+  		     : "memory", "cc");
+  }
+  ```
+
+  自加 1，结果为正则退出，为负则 跳转到函数 'call_rwsem_down_read_failed'，请参考之前的查找方式自己查找其实现。
+
+- 专用锁
+
+  ```c
+  void __sched __down_read(struct rw_semaphore *sem)
+  {
+  	struct rwsem_waiter waiter;
+  	struct task_struct *tsk;
+  	unsigned long flags;
+
+  	raw_spin_lock_irqsave(&sem->wait_lock, flags);
+  	/*初始化状态 或 仅有读者则 自加1 退出*/
+  	if (sem->activity >= 0 && list_empty(&sem->wait_list)) {
+  		/* granted */
+  		sem->activity++;
+  		raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
+  		goto out;
+  	}
+
+    	/*此处说明，有写者已经加锁*/
+    	/*将任务设置为 TASK_UNINTERRUPTIBLE 状态*/
+  	tsk = current;
+  	set_task_state(tsk, TASK_UNINTERRUPTIBLE);
+
+  	/*初始化 waiter 并将其加入 读写信号量 链表*/
+  	waiter.task = tsk;
+  	waiter.type = RWSEM_WAITING_FOR_READ;
+    	/*增加当前进程使用计数 usage*/
+  	get_task_struct(tsk);
+
+  	list_add_tail(&waiter.list, &sem->wait_list);
+
+  	/*解锁之后继续等待*/
+  	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
+
+  	/*循环等锁，进程切换再次判断。
+  	waiter列表无任务则退出。
+  	*/
+  	for (;;) {
+  		if (!waiter.task)
+  			break;
+  		schedule();
+  		set_task_state(tsk, TASK_UNINTERRUPTIBLE);
+  	}
+
+  	tsk->state = TASK_RUNNING;
+   out:
+  	;
+  }
+  ```
+
+  读者无锁应该等写者解锁：up_write。之后分析专用文件。
+
+#### up_write
+
+```c
+enum rwsem_waiter_type {
+	RWSEM_WAITING_FOR_WRITE,
+	RWSEM_WAITING_FOR_READ
+};
+```
+
+```c
+void __up_write(struct rw_semaphore *sem)
+{
+	unsigned long flags;
+
+	raw_spin_lock_irqsave(&sem->wait_lock, flags);
+	/*写者解锁直接赋值为0 即可。若队列有等待进程则唤醒
+	1 为是否唤醒 写者标志*/
+	sem->activity = 0;
+	if (!list_empty(&sem->wait_list))
+		sem = __rwsem_do_wake(sem, 1);
+
+	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
+}
+--->>>
+static inline struct rw_semaphore *
+__rwsem_do_wake(struct rw_semaphore *sem, int wakewrite)
+{
+	struct rwsem_waiter *waiter;
+	struct task_struct *tsk;
+	int woken;
+
+  	/*等待队列中获取一个等待者*/
+	waiter = list_entry(sem->wait_list.next, struct rwsem_waiter, list);
+
+  	/*写者独占锁，则唤醒即退出*/
+	if (waiter->type == RWSEM_WAITING_FOR_WRITE) {
+		if (wakewrite)
+			wake_up_process(waiter->task);
+		goto out;
+	}
+  	/*唤醒全部读者 或者 仅唤醒 等待的写者之前的读者
+  	  这么做的原因是保证顺序性，防止在写者之后的读者读到旧的数据
+  	*/
+	woken = 0;
+	do {
+		struct list_head *next = waiter->list.next;
+
+		list_del(&waiter->list);
+		tsk = waiter->task;
+      	/*内存屏障，保证顺序性，防止 tsk为NULL*/
+		smp_mb();
+		waiter->task = NULL;
+		wake_up_process(tsk);
+      	/*读的时候 get了一下*/
+		put_task_struct(tsk);
+		woken++;
+		if (next == &sem->wait_list)
+			break;
+		waiter = list_entry(next, struct rwsem_waiter, list);
+	} while (waiter->type != RWSEM_WAITING_FOR_WRITE);
+	/*增加唤醒的读者数量*/
+	sem->activity += woken;
+
+ out:
+	return sem;
+}
+```
+
+#### down_write
+
+```c
+void __sched __down_write(struct rw_semaphore *sem)
+{
+	__down_write_nested(sem, 0);
+}
+--->>>
+void __sched __down_write_nested(struct rw_semaphore *sem, int subclass)
+{
+	struct rwsem_waiter waiter;
+	struct task_struct *tsk;
+	unsigned long flags;
+
+	raw_spin_lock_irqsave(&sem->wait_lock, flags);
+
+	/*先初始化一个结构体，不能放循环里*/
+	tsk = current;
+	waiter.task = tsk;
+	waiter.type = RWSEM_WAITING_FOR_WRITE;
+	list_add_tail(&waiter.list, &sem->wait_list);
+	
+	for (;;) {
+		/*无人状态则加锁退出
+		此循环进行等锁*/
+		if (sem->activity == 0)
+			break;
+		set_task_state(tsk, TASK_UNINTERRUPTIBLE);
+		raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
+		schedule();
+		raw_spin_lock_irqsave(&sem->wait_lock, flags);
+	}
+	/* got the lock */
+	sem->activity = -1;
+	list_del(&waiter.list);
+
+	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
+}
+```
+
+#### up_read
+
+```c
+void __up_read(struct rw_semaphore *sem)
+{
+	unsigned long flags;
+
+	raw_spin_lock_irqsave(&sem->wait_lock, flags);
+
+	if (--sem->activity == 0 && !list_empty(&sem->wait_list))
+		sem = __rwsem_wake_one_writer(sem);
+
+	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
+}
+--->>>
+/*读锁唤醒时，等待队列中肯定都是写进程*/
+ static inline struct rw_semaphore *
+ __rwsem_wake_one_writer(struct rw_semaphore *sem)
+ {
+ 	struct rwsem_waiter *waiter;
+ 
+ 	waiter = list_entry(sem->wait_list.next, struct rwsem_waiter, list);
+ 	wake_up_process(waiter->task);
+ 
+ 	return sem;
+ }
+```
 
 ## 互斥体
 
+多数用户使用信号量只使用计数1，把它作为一个互斥的排它锁。信号量用户通用且没多少使用限制，这使得信号量适合用于那些较复杂的、未明情况下的互斥访问，比如内核于用户空间复杂的交互行为。
+
+但这也意味着简单的锁定而使用信号量不方便，并且信号量也缺乏强制的规则来行使任何形式的自动调试，即便受限的调试也不可能。为了找到一个更简单的睡眠锁，内核开发者们引入了互斥体（mutex）。
+
+mutex在内核中对应数据结构体mutex，其行为和使用计数为1的信号量类似，但操作接口更简单，实现也更高效，而且使用限制更强。
+
+```c
+struct mutex {
+	/* 1: unlocked, 0: locked, negative: locked, possible waiters */
+	atomic_t		count;
+	spinlock_t		wait_lock;
+	struct list_head	wait_list;
+#if defined(CONFIG_DEBUG_MUTEXES) || defined(CONFIG_SMP)
+  	/*多核架构 */
+	struct task_struct	*owner;
+#endif
+#ifdef CONFIG_MUTEX_SPIN_ON_OWNER
+	void			*spin_mlock;	/* Spinner MCS lock */
+#endif
+#ifdef CONFIG_DEBUG_MUTEXES
+	const char 		*name;
+	void			*magic;
+#endif
+#ifdef CONFIG_DEBUG_LOCK_ALLOC
+	struct lockdep_map	dep_map;
+#endif
+};
+```
+
+### mutex_init
+
+```c
+# define mutex_init(mutex) \
+do {							\
+	static struct lock_class_key __key;		\
+	__mutex_init((mutex), #mutex, &__key);		\
+} while (0)
+--->>>
+void
+__mutex_init(struct mutex *lock, const char *name, struct lock_class_key *key)
+{
+  	/*初始化字段*/
+	atomic_set(&lock->count, 1);
+	spin_lock_init(&lock->wait_lock);
+	INIT_LIST_HEAD(&lock->wait_list);
+	mutex_clear_owner(lock);
+#ifdef CONFIG_MUTEX_SPIN_ON_OWNER
+	lock->spin_mlock = NULL;
+#endif
+	debug_mutex_init(lock, name, key);
+}
+```
+
+### mutex_lock
+
+```c
+void __sched mutex_lock(struct mutex *lock)
+{
+  	/*不知道为什么需要睡一下*/
+	might_sleep();
+	__mutex_fastpath_lock(&lock->count, __mutex_lock_slowpath);
+  	/*设置进程owner*/
+	mutex_set_owner(lock);
+}
+/*__sched */
+/*	Attach to any functions which should be ignored in wchan output. 
+    #define __sched         __attribute__((__section__(".sched.text")))
+把带有__sched的函数放到.sched.text段。
+kernel有个waiting channel，如果用户空间的进程睡眠了，可以查到是停在内核空间哪个函数中等待的：
+    cat "/proc/<pid>/wchan"
+显然，.sched.text段的代码是会被wchan忽略的，schedule这个函数是不会出现在wchan的结果中的。
+*/
+```
+
+```c
+x86架构
+/*
+count 自减1，结果不为负（1-->0）则退出；
+否则，调用fail_fn函数
+*/
+#define __mutex_fastpath_lock(count, fail_fn)			\
+do {								\
+	unsigned int dummy;					\
+								\
+	typecheck(atomic_t *, count);				\
+	typecheck_fn(void (*)(atomic_t *), fail_fn);		\
+								\
+	asm volatile(LOCK_PREFIX "   decl (%%eax)\n"		\
+		     "   jns 1f	\n"				\
+		     "   call " #fail_fn "\n"			\
+		     "1:\n"					\
+		     : "=a" (dummy)				\
+		     : "a" (count)				\
+		     : "memory", "ecx", "edx");			\
+} while (0)
+```
+
+```c
+static __used noinline void __sched
+__mutex_lock_slowpath(atomic_t *lock_count)
+{
+  	/*container_of，内核的巧妙设计，请阅读源码*/
+	struct mutex *lock = container_of(lock_count, struct mutex, count);
+	__mutex_lock_common(lock, TASK_UNINTERRUPTIBLE, 0, NULL, _RET_IP_);
+}
+/*
+# define __used			__attribute__((__unused__))
+告诉编译器无论 GCC 是否发现这个函数的调用实例，都要使用这个函数。这对于从汇编代码中调用 C 函数有帮助。
+noinline  强制不内联
+*/
+```
+
+```c
+static inline int __sched
+__mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
+		    struct lockdep_map *nest_lock, unsigned long ip)
+{
+	struct task_struct *task = current;
+	struct mutex_waiter waiter;
+	unsigned long flags;
+  	/*禁止内核抢占*/
+	preempt_disable();
+	mutex_acquire_nest(&lock->dep_map, subclass, 0, nest_lock, ip);
+
+#ifdef CONFIG_MUTEX_SPIN_ON_OWNER
+	/*
+	当发现没有待处理的服务器并且锁所有者当前正在（不同的）CPU上运行时，尝试旋转获取（fastpath）。
+	理由是，如果锁主人正在运行，很可能很快就会解锁。
+	由于这需要锁所有者，而且这个互斥体实现不会在锁定字段中原子地跟踪所有者，所以需要非原子地跟踪它。
+	*/
+  	/*判断 进程描述符 on_cpu 位，以此判断是否在占用cpu(网上查询此标志释义不正确，可查代码自知)
+  	在 cpu 上，认为会很快解锁，所以循环等待。
+  	*/
+	if (!mutex_can_spin_on_owner(lock))
+		goto slowpath;
+
+	for (;;) {
+		struct task_struct *owner;
+		struct mspin_node  node;
+		/*mspin_lock 旋转等待解锁，函数分析在下面*/
+		mspin_lock(MLOCK(lock), &node);
+      	/*ACCESS_ONCE 保证字段是从内存获取*/
+		owner = ACCESS_ONCE(lock->owner);
+		if (owner && !mutex_spin_on_owner(lock, owner)) {
+			mspin_unlock(MLOCK(lock), &node);
+			break;
+		}
+
+		if ((atomic_read(&lock->count) == 1) &&
+		    (atomic_cmpxchg(&lock->count, 1, 0) == 1)) {
+			lock_acquired(&lock->dep_map, ip);
+			mutex_set_owner(lock);
+			mspin_unlock(MLOCK(lock), &node);
+			preempt_enable();
+			return 0;
+		}
+		mspin_unlock(MLOCK(lock), &node);
+
+		/*
+		 * When there's no owner, we might have preempted between the
+		 * owner acquiring the lock and setting the owner field. If
+		 * we're an RT task that will live-lock because we won't let
+		 * the owner complete.
+		 */
+		if (!owner && (need_resched() || rt_task(task)))
+			break;
+
+		/*
+		 * The cpu_relax() call is a compiler barrier which forces
+		 * everything in this loop to be re-loaded. We don't need
+		 * memory barriers as we'll eventually observe the right
+		 * values at the cost of a few extra spins.
+		 */
+		arch_mutex_cpu_relax();
+	}
+slowpath:
+#endif
+	spin_lock_mutex(&lock->wait_lock, flags);
+
+	debug_mutex_lock_common(lock, &waiter);
+	debug_mutex_add_waiter(lock, &waiter, task_thread_info(task));
+
+	/* add waiting tasks to the end of the waitqueue (FIFO): */
+	list_add_tail(&waiter.list, &lock->wait_list);
+	waiter.task = task;
+
+	if (MUTEX_SHOW_NO_WAITER(lock) && (atomic_xchg(&lock->count, -1) == 1))
+		goto done;
+
+	lock_contended(&lock->dep_map, ip);
+
+	for (;;) {
+		/*
+		 * Lets try to take the lock again - this is needed even if
+		 * we get here for the first time (shortly after failing to
+		 * acquire the lock), to make sure that we get a wakeup once
+		 * it's unlocked. Later on, if we sleep, this is the
+		 * operation that gives us the lock. We xchg it to -1, so
+		 * that when we release the lock, we properly wake up the
+		 * other waiters:
+		 */
+		if (MUTEX_SHOW_NO_WAITER(lock) &&
+		   (atomic_xchg(&lock->count, -1) == 1))
+			break;
+
+		/*
+		 * got a signal? (This code gets eliminated in the
+		 * TASK_UNINTERRUPTIBLE case.)
+		 */
+		if (unlikely(signal_pending_state(state, task))) {
+			mutex_remove_waiter(lock, &waiter,
+					    task_thread_info(task));
+			mutex_release(&lock->dep_map, 1, ip);
+			spin_unlock_mutex(&lock->wait_lock, flags);
+
+			debug_mutex_free_waiter(&waiter);
+			preempt_enable();
+			return -EINTR;
+		}
+		__set_task_state(task, state);
+
+		/* didn't get the lock, go to sleep: */
+		spin_unlock_mutex(&lock->wait_lock, flags);
+		schedule_preempt_disabled();
+		spin_lock_mutex(&lock->wait_lock, flags);
+	}
+
+done:
+	lock_acquired(&lock->dep_map, ip);
+	/* got the lock - rejoice! */
+	mutex_remove_waiter(lock, &waiter, current_thread_info());
+	mutex_set_owner(lock);
+
+	/* set it to 0 if there are no waiters left: */
+	if (likely(list_empty(&lock->wait_list)))
+		atomic_set(&lock->count, 0);
+
+	spin_unlock_mutex(&lock->wait_lock, flags);
+
+	debug_mutex_free_waiter(&waiter);
+	preempt_enable();
+
+	return 0;
+}
+```
+
+```c
+static noinline
+void mspin_lock(struct mspin_node **lock, struct mspin_node *node)
+{
+	struct mspin_node *prev;
+
+	/* Init node */
+	node->locked = 0;
+	node->next   = NULL;
+
+	prev = xchg(lock, node);
+  	/*
+  	可理解为 prev = lock;
+  	lock = node;  node 无变化
+  	*/
+	if (likely(prev == NULL)) {
+		/* Lock acquired */
+		node->locked = 1;
+		return;
+	}
+	ACCESS_ONCE(prev->next) = node;
+	smp_wmb();
+	/* 等待锁持有者放行 */
+	while (!ACCESS_ONCE(node->locked))
+		arch_mutex_cpu_relax();	// 执行 nop
+}
+--->>>
+x86
+#define xchg(ptr, v)	__xchg_op((ptr), (v), xchg, "")
+--->>>
+#define __xchg_op(ptr, arg, op, lock)					\
+	({								\
+		/*
+		定义返回值 __ret
+		arg 在刚开始就已经赋给 __ret，也就是说不对 arg进行操作
+		lock 传参为""，xchg 指令有 lock 功能
+		xchg 释义为：
+			TEMP ← DEST;
+			DEST ← SRC;
+			SRC ← TEMP;
+		*/
+	        __typeof__ (*(ptr)) __ret = (arg);			\
+		switch (sizeof(*(ptr))) {				\
+		// 1
+		case __X86_CASE_B:					\
+			asm volatile (lock #op "b %b0, %1\n"		\
+				      : "+q" (__ret), "+m" (*(ptr))	\
+				      : : "memory", "cc");		\
+			break;						\
+		// 2
+		case __X86_CASE_W:					\
+			asm volatile (lock #op "w %w0, %1\n"		\
+				      : "+r" (__ret), "+m" (*(ptr))	\
+				      : : "memory", "cc");		\
+			break;						\
+		// 4
+		case __X86_CASE_L:					\
+			asm volatile (lock #op "l %0, %1\n"		\
+				      : "+r" (__ret), "+m" (*(ptr))	\
+				      : : "memory", "cc");		\
+			break;						\
+		// 8
+		case __X86_CASE_Q:					\
+			asm volatile (lock #op "q %q0, %1\n"		\
+				      : "+r" (__ret), "+m" (*(ptr))	\
+				      : : "memory", "cc");		\
+			break;						\
+		default:						\
+			__ ## op ## _wrong_size();			\
+		}							\
+		__ret;							\
+	})
+```
+
+
+
+### mutex_unlock
+
+
+
+TODO
+
+
+
 ## 完成变量
+
+### init_completion
+
+```c
+struct __wait_queue_head {
+	spinlock_t lock;
+	struct list_head task_list;
+};
+typedef struct __wait_queue_head wait_queue_head_t;
+
+struct completion {
+	unsigned int done;
+	wait_queue_head_t wait;
+};
+```
+
+```c
+static inline void init_completion(struct completion *x)
+{
+	x->done = 0;
+	init_waitqueue_head(&x->wait);
+}
+-->>
+#define init_waitqueue_head(q)				\
+	do {						\
+		static struct lock_class_key __key;	\
+							\
+		__init_waitqueue_head((q), #q, &__key);	\
+	} while (0)
+-->>
+//init the spinlock and the list
+void __init_waitqueue_head(wait_queue_head_t *q, const char *name, struct lock_class_key *key)
+{
+	spin_lock_init(&q->lock);
+	lockdep_set_class_and_name(&q->lock, key, name);
+	INIT_LIST_HEAD(&q->task_list);
+}
+```
+
+### wait_for_completion
+
+```c
+void __sched wait_for_completion(struct completion *x)
+{
+	wait_for_common(x, MAX_SCHEDULE_TIMEOUT, TASK_UNINTERRUPTIBLE);
+}
+-->>
+static long __sched
+wait_for_common(struct completion *x, long timeout, int state)
+{
+	return __wait_for_common(x, schedule_timeout, timeout, state);
+}
+-->>
+static inline long __sched
+__wait_for_common(struct completion *x,
+		  long (*action)(long), long timeout, int state)
+{
+	might_sleep();
+
+	spin_lock_irq(&x->wait.lock);
+	timeout = do_wait_for_common(x, action, timeout, state);
+	spin_unlock_irq(&x->wait.lock);
+	return timeout;
+}
+-->>
+static inline long __sched
+do_wait_for_common(struct completion *x,
+		   long (*action)(long), long timeout, int state)
+{
+	if (!x->done) {
+      	/*
+      	#define DECLARE_WAITQUEUE(name, tsk)					\
+			wait_queue_t name = __WAITQUEUE_INITIALIZER(name, tsk)
+		-->>
+		#define __WAITQUEUE_INITIALIZER(name, tsk) {				\
+        .private	= tsk,						\
+        .func		= default_wake_function,			\
+        .task_list	= { NULL, NULL } }
+		-->>
+		int default_wake_function(wait_queue_t *curr, unsigned mode, int wake_flags,
+			  void *key)
+        {
+        	try_to_wake_up 改变状态成功则 return  success = 1;
+            return try_to_wake_up(curr->private, mode, wake_flags);
+        }
+       	*/
+      	/*
+      	定义一个等待队列；更改flags 并加入到 完成变量的 等待队列中。
+      	*/
+		DECLARE_WAITQUEUE(wait, current);		
+		__add_wait_queue_tail_exclusive(&x->wait, &wait);
+		do {
+          	/*
+          	state = TASK_UNINTERRUPTIBLE;
+          	signal_pending_state 前面分析过
+          	*/
+			if (signal_pending_state(state, current)) {
+				timeout = -ERESTARTSYS;
+				break;
+			}
+          	/*设置当前进程状态；之后解锁进行进程调度*/
+			__set_current_state(state);
+			spin_unlock_irq(&x->wait.lock);
+			timeout = action(timeout);
+			spin_lock_irq(&x->wait.lock);
+		} while (!x->done && timeout);
+		
+		__remove_wait_queue(&x->wait, &wait);
+		if (!x->done)
+			return timeout;
+	}
+	x->done--;
+	return timeout ?: 1;
+}
+```
+
+可自己分析函数变体 wait_for_completion_*。
+
+### complete
+
+```c
+void complete(struct completion *x)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&x->wait.lock, flags);
+  	/*增加完成标志*/
+	x->done++;
+	__wake_up_common(&x->wait, TASK_NORMAL, 1, 0, NULL);
+	spin_unlock_irqrestore(&x->wait.lock, flags);
+}
+-->>
+static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
+			int nr_exclusive, int wake_flags, void *key)
+{
+	wait_queue_t *curr, *next;
+	/*循环列表中每一个 queue，第一个唤醒成功 则退出；
+	唤醒之后就到了 do_wait_for_common 中继续执行代码；
+	循环列表内部 条件从左至右，因此，成功 nr_exclusive个就退出*/
+	list_for_each_entry_safe(curr, next, &q->task_list, task_list) {
+		unsigned flags = curr->flags;
+		
+		if (curr->func(curr, mode, wake_flags, key) &&
+				(flags & WQ_FLAG_EXCLUSIVE) && !--nr_exclusive)
+			break;
+	}
+}
+```
+
+可以自己分析  函数变体  complete_all。
 
 ## 大内核锁（BKL）
 
+对整个内核加锁，现在已不在使用。
+
 ## 顺序锁
+
+
 
 ## 禁止抢占
 

@@ -44,7 +44,7 @@ tags:
 #### 启动虚拟机
 
 ```shell
-# virt-install --virt-type kvm --name centos-6.9 --memory 2048 --vcpus=2 --disk centOS-6.9.raw,format=raw --graphics vnc,listen=0.0.0.0 --noautoconsole --os-type=linux --os-variant=rhel6 --cdrom=CentOS-6.9-i386-minimal.iso
+# virt-install --virt-type kvm --name centos-6.9 --memory 2048 --vcpus=2 --disk centOS-6.9.raw,format=raw --graphics vnc,listen=0.0.0.0 --noautoconsole --os-type=linux --os-variant=rhel6 --network network=default --extra-args='console=tty0 console=ttyS0,115200n8 serial' --location=/var/lib/libvirt/images/centOS-6.9.iso
 ```
 
 参数可能因命令版本不同而不一致。
@@ -55,7 +55,13 @@ tags:
 --network network=default
 ```
 
-具体网络类型及设置请参考命令帮助。
+libvirtd启动时，会默认创建接口 'virbr0'，此接口就是 虚拟默认网络'default'的默认网关，其地址为'192.168.122.1'，在其上创建了许多NAT规则，以确保虚拟机可以连同外网。如下图
+
+![MASQUERADE](/images/openstack镜像制作/MASQUERADE.png)
+
+其他网络类型及设置请参考命令帮助。
+
+配置了 'console'可 console 登录，比较方便的一种方式。
 
 #### 安装系统
 
