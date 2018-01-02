@@ -576,6 +576,7 @@ static struct vport *internal_dev_create(const struct vport_parms *parms)
 		goto error_free_vport;
 	}
   	……
+}
 ```
 
 ```c
