@@ -1,7 +1,10 @@
 ---
 title: Cache和Buffer的区别
 date: 2017-11-26 21:25:13
+categories: Linux内核
 tags:
+  - Cache
+  - Buffer
 ---
 
 Cache的核心作用是加快取用的速度。Buffer的核心作用是用来缓冲，缓和冲击。

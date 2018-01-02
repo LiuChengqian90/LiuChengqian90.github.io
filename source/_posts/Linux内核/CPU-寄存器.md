@@ -1,7 +1,7 @@
 ---
 title: CPU 寄存器
 date: 2017-09-09 00:46:05
-categories: 寄存器
+categories: Linux内核
 tags:
   - 寄存器
   - CPU

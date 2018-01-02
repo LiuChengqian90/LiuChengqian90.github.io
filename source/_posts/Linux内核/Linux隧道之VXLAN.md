@@ -1,6 +1,7 @@
 ---
 title: Linux隧道之VXLAN
 date: 2017-12-26 17:50:28
+categories: Linux内核
 tags:
   - VXLAN
 ---
@@ -149,14 +150,6 @@ BDIF接口的功能与VLANIF接口类似，是基于BD创建的三层逻辑接�
 ```yaml
 VXLAN网络与非VXLAN网络之间的互通，也需要借助于三层网关。其实现与图3-8的不同点在于报文在VXLAN网络侧会进行封装，而在非VXLAN网络侧不需要进行封装。报文从VXLAN侧进入网关并解封装后，就按照普通的单播报文发送方式进行转发。
 ```
-
-## Linux对vxlan的支持
-
-TBD
-
-## OVS对vxlan的支持
-
-TBD
 
 ## 优秀链接
 
