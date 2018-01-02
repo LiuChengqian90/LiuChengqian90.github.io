@@ -1,6 +1,7 @@
 ---
 title: Linux内核编译详解
 date: 2017-10-17 16:41:24
+categories: Linux内核
 tags:
   - 内核
   - 编译
