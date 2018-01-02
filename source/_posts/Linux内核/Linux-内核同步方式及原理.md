@@ -7,6 +7,9 @@ tags:
   - 完成变量
   - 信号量
   - 互斥体
+  - 完成变量
+  - 顺序锁
+  - 内核屏障
 ---
 
 本文基于 linux kernel 3.10.105。
@@ -2016,15 +2019,178 @@ static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
 
 ## 顺序锁
 
+顺序锁，简称seq锁，是在2.6版本内核中引入的一种新型锁。这种锁提供了一种很简单的机制，用于读写共享数据。实现这种锁主要依靠一个序列计数器。当有疑义的数据被写入时，会得到一个锁，并且序列值会增加。在读取数据之前和之后，序列号都被读取。如果读取的序列号值相同，说明在读操作进行的过程中没有被写操作打断过。此外，如果读取的值是偶数，那么久表明写操作没有发生（锁的初始值是0，写锁会使值成奇数，释放会使值变成偶数）。
 
+### 初始化 DEFINE_SEQLOCK
+
+seq锁的基本结构为 
+
+```c
+/*一个计数器；一个自旋锁*/
+typedef struct {
+	struct seqcount seqcount;
+	spinlock_t lock;
+} seqlock_t;
+```
+
+```c
+#define DEFINE_SEQLOCK(x) \
+		seqlock_t x = __SEQLOCK_UNLOCKED(x)
+-->>
+#define __SEQLOCK_UNLOCKED(lockname)			\
+	{						\
+		/*#define SEQCNT_ZERO { 0 }*/
+		.seqcount = SEQCNT_ZERO,		\
+		.lock =	__SPIN_LOCK_UNLOCKED(lockname)	\
+	}
+```
+
+初始化即为 将计数值为0并初始化自旋锁。也可以利用宏 seqlock_init进行初始化。
+
+### write_seqlock
+
+``` c
+static inline void write_seqlock(seqlock_t *sl)
+{
+  	/*先加锁，然后计数加一*/
+	spin_lock(&sl->lock);
+	write_seqcount_begin(&sl->seqcount);
+}
+-->>
+static inline void write_seqcount_begin(seqcount_t *s)
+{
+	s->sequence++;
+	smp_wmb();
+}
+```
+
+### write_sequnlock
+
+```c
+static inline void write_sequnlock(seqlock_t *sl)
+{
+  	/*计数加一 之后 解锁*/
+	write_seqcount_end(&sl->seqcount);
+	spin_unlock(&sl->lock);
+}
+-->>
+static inline void write_seqcount_end(seqcount_t *s)
+{
+	smp_wmb();
+	s->sequence++;
+}
+```
+
+写的顺序锁基本无难度，下面举例看一下read的用法。
+
+```c
+
+/*
+ * Setup the device for a periodic tick
+ */
+void tick_setup_periodic(struct clock_event_device *dev, int broadcast)
+{
+		……
+		do {
+			seq = read_seqbegin(&jiffies_lock);
+			next = tick_next_period;
+		} while (read_seqretry(&jiffies_lock, seq));
+		……
+}
+```
+
+### read_seqbegin
+
+```c
+static inline unsigned read_seqbegin(const seqlock_t *sl)
+{
+	return read_seqcount_begin(&sl->seqcount);
+}
+-->>
+static inline unsigned read_seqcount_begin(const seqcount_t *s)
+{
+	unsigned ret = __read_seqcount_begin(s);
+	smp_rmb();
+	return ret;
+}
+-->>
+static inline unsigned __read_seqcount_begin(const seqcount_t *s)
+{
+	unsigned ret;
+
+repeat:
+	ret = ACCESS_ONCE(s->sequence);
+  	/*为真表示奇数，write已加锁*/
+	if (unlikely(ret & 1)) {
+		cpu_relax();
+		goto repeat;
+	}
+  	/*返回之后，write又加锁了咋办？继续看*/
+	return ret;
+}
+```
+
+### read_seqretry
+
+```c
+static inline unsigned read_seqretry(const seqlock_t *sl, unsigned start)
+{
+	return read_seqcount_retry(&sl->seqcount, start);
+}
+-->>
+static inline int read_seqcount_retry(const seqcount_t *s, unsigned start)
+{
+	smp_rmb();
+	return __read_seqcount_retry(s, start);
+}
+-->>
+static inline int __read_seqcount_retry(const seqcount_t *s, unsigned start)
+{
+  	/*不相同表示读后又被写了，那么继续循环！*/
+	return unlikely(s->sequence != start);
+}
+```
+
+seq锁有助于提供一种非常轻量级和具有扩展性的外观。但是seq锁对写者更有利。seq锁在遇到如下需求时将是最理想的选择：
+
+- 数据存在很多读者。
+- 数据写者很少。
+- 写者很少，但是希望写优先于读，而且不允许读者让写着饥饿。
+- 数据简单，如简单结构，甚至是简单的整型——在某些场合，是不能使用原子量的。（啥场合暂时未遇到）
+
+jiffies中利用seq锁（函数 get_jiffies_64）。
 
 ## 禁止抢占
 
+由于内核是抢占性的，内核中的进程在任何时刻都可能停下来以便另一个具有更高优先权的进程运行。这意味着一个任务与被枪占的任务可能会在同一个临界区内运行。为了避免这种情况，内核抢占代码使用自旋锁作为非抢占区域的标记。如果一个自旋锁被持有，内核便不能进行抢占。因为内核抢占和SMP面对相同的并发问题，并且内核已经是SMP安全的（SMP-safe），所以，这种简单的变化使得内核也是抢占安全的（preempt-safe）。
+
+实际中，某些情况并不需要自旋锁，但是仍然需要关闭内核抢占。最频繁出现的情况就是每个处理器上的数据。如果数据对每个处理器是唯一的，那么，这样的数据可能就不需要使用锁来保护，因为数据只能被一个处理器访问。如果自旋锁没有被持有，内核又是抢占式的，那么一个新调度的任务就可能访问同一个变量。
+
+为了解决这个问题，可以通过preempt_disable()禁止内核抢占。这是一个可以嵌套调用的函数，可以调用任意次。每次调用都必须有一个相应的preempt_enable()调用。当最后一次preempt_enable()被调用后，内核抢占才重新启用。
+
+抢占计数存放着被持有锁的数量和preempt_disable()的调用次数，如果计数是0，那么内核可以进行枪占；如果为1或更大的值，那么，内核就不会进行抢占。
+
+preempt_disable() 和 preempt_enable()实现比较简单，此处不在分析。
+
 ## 顺序和屏障
 
+当处理多处理器之间或硬件设备之间的同步问题时，有时需要在你的程序代码中以指定的顺序发出读内存和写内存指令。在和硬件交互时，时常需要确保一个给定的读操作发生在其他读或写操作之前。另外，在多处理器上，可能需要按写数据的顺序读数据。但是编译器和处理器为了提高效率，可能对读和写程序排序（x86处理器不会这样做）。
 
+不过，所有可能重新排序和写的处理器提供了机器指令来确保顺序要求。同样也可以指示编译器不要对给定点周围的指令序列进行重新排序。这些确保顺序的指令称为屏障（barriers）。
 
+rmb()方法提供了一个“读”内存屏障，它确保跨越rmb()的载入动作不会发生重排序。
 
+wmb()方法提供了一个“写”内存屏障，功能和rmb()类似，区别仅仅是它是针对存储而非载入——它确保跨越屏障的存储不发生重排序。
+
+mb()方法既提供了读屏障也提供了写屏障。载入和存储动作都不会跨越屏障重排序。
+
+read_barrier_depends()是rmb()的变种，它提供了一个读屏障，但是仅仅是针对后续读操作所依靠的那些载入。因为屏障后的读操作依赖于屏障前的读操作，因此该屏障确保屏障前的读操作在屏障后的读操作之前完成。
+
+宏smp_rmb()、smp_wmb()、smp_mb()和smp_read_barrier_depends()提供了一个有用的优化。在SMP内核中它们被定义成常用的内存屏障，而在单处理机内核中，它们被定义成编译器的屏障。
+
+barrier()方法可以防止编译器跨屏障对载入或存储操作进行优化。编译器不会重新组织存储或载入操作，而防止改变C代码的效果和现有数据的依赖关系。但是，它不知道在当前上下文之外会发生什么事。
+
+**注意**，对于不同的体系结构，屏障的实际效果差别很大。
 
 ## 参考资料
 

@@ -717,7 +717,7 @@ GRO(Generic Receive Offload)，比 LSO更通用，自动检测网卡支持特性
 
 driver macvlan支持GRO。
 
-以上功能大多可以通过 ethtool -K 开启。查看网卡 offload功能
+以上功能大多可以通过 ethtool -K 开启。查看网卡 offload功能：
 
 ```shell
 # ethtool -k em1 

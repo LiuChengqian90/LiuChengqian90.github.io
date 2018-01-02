@@ -31,7 +31,8 @@ tags:
 VXLAN（Virtual eXtensible Local Area Network，虚拟扩展局域网），是由IETF定义的NVO3（Network Virtualization over Layer 3）标准技术之一，采用L2 over L4（MAC-in-UDP）的报文封装模式，将二层报文用三层协议进行封装，可实现二层网络在三层范围内进行扩展，同时满足数据中心大二层虚拟迁移和多租户的需求。
 
 ```yaml
-NVO3是基于三层IP overlay网络构建虚拟网络的技术的统称，VXLAN只是NVO3技术之一。除此之外，比较有代表性的还有NVGRE、STT。
+NVO3是基于三层IP overlay网络构建虚拟网络的技术的统称，VXLAN只是NVO3技术之一。
+除此之外，比较有代表性的还有NVGRE、STT。
 ```
 
 ### 报文格式
@@ -148,7 +149,9 @@ BDIF接口的功能与VLANIF接口类似，是基于BD创建的三层逻辑接�
 4. 报文到达VTEP_2后，VTEP_2对报文进行解封装，得到内层的数据报文，并将其发送给VM_B。
 
 ```yaml
-VXLAN网络与非VXLAN网络之间的互通，也需要借助于三层网关。其实现与图3-8的不同点在于报文在VXLAN网络侧会进行封装，而在非VXLAN网络侧不需要进行封装。报文从VXLAN侧进入网关并解封装后，就按照普通的单播报文发送方式进行转发。
+VXLAN网络与非VXLAN网络之间的互通，也需要借助于三层网关。
+其实现不同点在于报文在VXLAN网络侧会进行封装，而在非VXLAN网络侧不需要进行封装。
+报文从VXLAN侧进入网关并解封装后，就按照普通的单播报文发送方式进行转发。
 ```
 
 ## 优秀链接
