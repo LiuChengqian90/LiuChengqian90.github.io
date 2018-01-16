@@ -395,7 +395,6 @@ static const struct net_device_ops vxlan_netdev_ops = {
 1. vxlan_xmit
 
    ```c
-
    /* 
    此函数主要是找 远端 IP及MAC，封装包的函数为 vxlan_xmit_one
    */
@@ -458,3 +457,266 @@ static const struct net_device_ops vxlan_netdev_ops = {
 2. vxlan_xmit_one
 
    封装报文，具体内容可自己分析。
+
+## vxlan实例
+
+实验环境：
+
+```shell
+# vm1
+[root@test-1 ~]# uname -sr
+Linux 3.10.0-693.el7.x86_64
+[root@test-1 ~]# ip addr show dev eth0 
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1446 qdisc pfifo_fast state UP qlen 1000
+    link/ether fa:16:3e:0c:e3:c6 brd ff:ff:ff:ff:ff:ff
+    inet 10.10.10.11/24 brd 10.10.10.255 scope global dynamic eth0
+       valid_lft 84967sec preferred_lft 84967sec
+       
+# vm2
+[root@test-2 ~]# uname -sr
+Linux 3.10.0-693.el7.x86_64
+[root@test-2 ~]# ip addr show dev eth0 
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1446 qdisc pfifo_fast state UP qlen 1000
+    link/ether fa:16:3e:50:61:0d brd ff:ff:ff:ff:ff:ff
+    inet 10.10.10.9/24 brd 10.10.10.255 scope global dynamic eth0
+       valid_lft 84929sec preferred_lft 84929sec
+```
+
+### 点对点的vxlan
+
+完成一个最简单的vxlan网络，拓扑如下：
+
+![规划图1](/images/Linux对vxlan的支持/规划图1.png)
+
+开始配置
+
+```shell
+[root@test-1 ~]# ip link add vxlan1 type vxlan id 1 dstport 4789 remote 10.10.10.9 local 10.10.10.11 dev eth0 
+```
+
+- vxlan1 即为创建的接口名称 ，type 为 vxlan 类型。
+- id 即为 VNI。
+- dstport 指定 UDP的目的端口，IANA 为vxlan分配的目的端口是 4789。
+- remote 和 local ，即远端和本地的IP地址，因为vxlan是MAC-IN-UDP，需要指定外层IP，此处即指。
+- dev 本地流量接口。用于 vtep 通信的网卡设备，用来读取 IP 地址。注意这个参数和 `local`参数含义是相同的，在这里写出来是为了告诉大家有两个参数存在。
+
+创建完成可看到
+
+```shell
+[root@test-1 ~]# ip addr show type vxlan
+3: vxlan1: <BROADCAST,MULTICAST> mtu 1396 qdisc noop state DOWN qlen 1000
+    link/ether 86:65:ef:3d:a1:e7 brd ff:ff:ff:ff:ff:ff
+```
+
+接口现在还没有地址，也没有开启，接下来进行如下配置
+
+```shell
+[root@test-1 ~]# ip addr add 192.168.1.3/24 dev vxlan1
+[root@test-1 ~]# ip link set vxlan1 up
+[root@test-1 ~]# ip addr show type vxlan
+3: vxlan1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1396 qdisc noqueue state UNKNOWN qlen 1000
+    link/ether 86:65:ef:3d:a1:e7 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.3/24 scope global vxlan1
+       valid_lft forever preferred_lft forever
+```
+
+`vxlan1`已经配置完成。
+
+```
+为什么vxlan1的MTU是 1396呢？
+因为我的vm启在openstack云环境中，租户网络为vxlan，外网为vlan类型。
+因此创建的内网网络MTU为 1446(1500 - 4(vlan) - 50(vxlan))，在vm中基于eth0又配置vxlan，因此MTU需要再减50，即 1396。
+```
+
+之后看一下路由表即vxlan 的 FDB表
+
+```shell
+#(仅列出vxlan部分)
+[root@test-1 ~]# ip route 
+192.168.1.0/24 dev vxlan1 proto kernel scope link src 192.168.1.3 
+[root@test-1 ~]# bridge fdb
+00:00:00:00:00:00 dev vxlan1 dst 10.10.10.9 via eth0 self permanent
+# 即默认vxlan1 对端地址为 10.10.10.9，通过eth0进行报文交换
+```
+
+对test-2进行同样的配置，保证VNI和dstport一致。VNI一致是为了不进行vxlan隔离，dstport一致是因为IANA 为vxlan分配的目的端口是 4789。
+
+之后在test-1上进行测试连通性
+
+```shell
+[root@test-1 ~]# ping 192.168.1.4 -c 3
+PING 192.168.1.4 (192.168.1.4) 56(84) bytes of data.
+64 bytes from 192.168.1.4: icmp_seq=1 ttl=64 time=0.424 ms
+64 bytes from 192.168.1.4: icmp_seq=2 ttl=64 time=0.437 ms
+64 bytes from 192.168.1.4: icmp_seq=3 ttl=64 time=0.404 ms
+
+--- 192.168.1.4 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+rtt min/avg/max/mdev = 0.404/0.421/0.437/0.027 ms
+```
+
+在对端抓取eth0报文如下
+
+![vxlan-tcpdump](/images/Linux对vxlan的支持/vxlan-tcpdump.png)
+
+### 组播模式vxlan
+
+要组成同一个 vxlan 网络，vtep 必须能感知到彼此的存在。多播组本来的功能就是把网络中的某些节点组成一个虚拟的组，所以 vxlan 最初想到用多播来实现是很自然的事情。拓扑如下
+
+![vxlan-multicast](/images/Linux对vxlan的支持/vxlan-multicast.png)
+
+```shell
+[root@test-1 ~]# ip link add vxlan1 type vxlan id 2 dstport 4789 group 224.0.0.1 dev eth0 
+[root@test-1 ~]# ip addr add 192.168.1.3/24 dev vxlan1
+[root@test-1 ~]# ip link set vxlan1 up
+[root@test-1 ~]# ip route 
+192.168.1.0/24 dev vxlan1 proto kernel scope link src 192.168.1.3 
+[root@test-1 ~]# bridge fdb
+00:00:00:00:00:00 dev vxlan1 dst 224.0.0.1 via eth0 self permanent
+```
+
+这里最重要的参数是 `group 224.0.0.1` （多播地址范围为224.0.0.0到239.255.255.255）表示把 vtep 加入到这个多播组。其他设备进行类似配置，确保VNI与group相同。
+
+由于将vxlan1加入多播组，因此ARP请求这类报文不在进行广播，而是多播。
+
+![vxlan-mul-arp](/images/Linux对vxlan的支持/vxlan-mul-arp.png)
+
+可以与点对点形式的做对比
+
+![vxlan-point-to-point](/images/Linux对vxlan的支持/vxlan-point-to-point.png)
+
+ARP回应依然是单播报文。通信结束之后，查看ARP及fdb表项为
+
+```shell
+[root@test-1 ~]# ip neigh
+192.168.1.4 dev vxlan1 lladdr a6:8b:d5:2d:83:3c STALE
+[root@test-1 ~]# bridge fdb
+00:00:00:00:00:00 dev vxlan1 dst 224.0.0.1 via eth0 self permanent
+a6:8b:d5:2d:83:3c dev vxlan1 dst 10.10.10.9 self 
+```
+
+### 利用 bridge 来接入容器
+
+此处的bridge可以是linux的bridge，也可以是ovs的bridge，为了配置简单化，此处以linux举例。
+
+上面两种拓扑将vxlan作为三层口，在云环境中基本没什么意义。在实际的生产中，每台主机上都有几十台甚至上百台的虚拟机或者容器需要通信，因此我们需要找到一种方法能够把这些通信实体组织起来——这正是引入桥的意义。
+
+![vxlan-bridge](/images/Linux对vxlan的支持/vxlan-bridge.png)
+
+下面用 network namespace来模拟tap(vm接口)，进行如下配置
+
+```shell
+#创建vxlan接口
+[root@test-1 ~]# ip link add vxlan1 type vxlan id 2 dstport 4789 group 224.0.0.6 dev eth0 
+#创建NS
+[root@test-1 ~]# ip netns add vm0
+[root@test-1 ~]# ip netns exec vm0 ip link set dev lo up
+#创建veth 接口，并将其中一个veth口放到 NS中
+[root@test-1 ~]# ip link add veth0 type veth peer name veth1
+[root@test-1 ~]# ip link set veth0 netns vm0
+[root@test-1 ~]# ip netns exec vm0 ip link set veth0 name eth0
+[root@test-1 ~]# ip netns exec vm0 ip addr add 192.168.1.3/24 dev eth0
+[root@test-1 ~]# ip netns exec vm0 ip link set dev eth0 up
+[root@test-1 ~]# ip netns exec vm0 ip addr show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+8: eth0@if7: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state LOWERLAYERDOWN qlen 1000
+    link/ether 9e:ab:18:d5:25:55 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 192.168.1.3/24 scope global eth0
+       valid_lft forever preferred_lft forever
+#创建桥，并将vxlan、veth加入桥
+[root@test-1 ~]# ip link add br0 type bridge
+[root@test-1 ~]# ip link set vxlan1 master br0
+[root@test-1 ~]# ip link set vxlan1 up
+[root@test-1 ~]# 
+[root@test-1 ~]# ip link set dev veth1 master br0
+[root@test-1 ~]# ip link set dev veth1 up
+[root@test-1 ~]# ip link set dev br0 up
+[root@test-1 ~]# bridge link
+6: vxlan1 state UNKNOWN : <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1396 master br0 state forwarding priority 32 cost 100 
+7: veth1 state UP @(null): <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 master br0 state forwarding priority 32 cost 2
+```
+
+其他设备进行类似配置（设备较多可用脚本实现）。利用命令 `ip netns exec vm0 ping IP`来验证连通性。
+
+此过程为：
+
+- NS eth0 ARP广播，通过veth1到达br0。
+- br0上没有二层表，进行学习之后，每个口（除收报文口）进行转发，到达vxlan1。
+- vxlan1口fdb表默认走多播，进行外层封装之后从eth0接口发出。
+
+### 手动维护 vtep 组
+
+对 overlay 网络来说，它的网段范围是分布在多个主机上的，因此传统 ARP 报文的广播无法直接使用。要想做到 overlay 网络的广播，必须把报文发送到所有 vtep 在的节点，这才引入了多播。
+
+如果提前知道哪些 vtep 要组成一个网络，以及这些 vtep 在哪些主机上，那么就可以不使用多播。
+
+Linux 的 vxlan 模块也提供了这个功能，而且实现起来并不复杂。创建 vtep interface 的时候不使用 `remote` 或者 `group` 参数就行：
+
+```shell
+[root@test-1 ~]# ip link add vxlan1 type vxlan id 2 dstport 4789  dev eth0 
+[root@test-1 ~]# bridge fdb
+01:00:5e:00:00:01 dev eth0 self permanent
+```
+
+由于没有指定 `remote` 和 `group` ，因此进行广播时不知道要发送给谁。但是可以手动添加默认的 FDB 表项
+
+```shell
+#环境只有两台设备，因此只添加一条表项
+[root@test-1 ~]# bridge fdb append 00:00:00:00:00:00 dev vxlan1 dst 10.10.10.9
+[root@test-1 ~]# bridge fdb
+00:00:00:00:00:00 dev vxlan1 dst 10.10.10.9 self permanent
+```
+
+这种方式是手动维护多播组，解决了在某些 underlay 网络中不能使用多播的问题。但是由于需要手动维护，比较不方便，当然，可以编写脚本自动维护。
+
+除此之外，这种方式也没有解决多播的另外一个问题：每次要查找 MAC 地址要发送大量的无用报文，如果 vtep 组节点数量很大，那么每次查询都发送 N 个报文，其中只有一个报文真正有用。
+
+这个问题的解决可以参考此种方式，添加单播fdb表项！
+
+### 手动维护 fdb 表
+
+如果提前知道目的容器（或vm） MAC 地址和它所在主机的 IP 地址，也可以通过更新 fdb 表项来减少广播的报文数量。
+
+```shell
+[root@test-1 ~]# ip link add vxlan1 type vxlan id 2 dstport 4789  dev eth0 nolearning
+```
+
+`nolearning` 参数表示 vtep 不通过收到的报文来学习 fdb 表项的内容而是管理员维护。
+
+```shell
+[root@test-1 ~]# bridge fdb append 00:00:00:00:00:00 dev vxlan1 dst 10.10.10.9
+[root@test-1 ~]# bridge fdb append 4e:e9:90:34:2e:b5 dev vxlan1 dst 10.10.10.9
+```
+
+- 第一条是默认表项；
+- 第二条是明确的IP-MAC对应关系，**注意**：MAC是容器（vm）端口的MAC地址，而IP是NVE(Network Virtual Endpoint)的IP，即MAC是overlay的MAC，IP是underlay的IP。
+
+不过此种方法只是把fdb进行手动维护，ARP广播没有任何改进，不过如果确定环境，那么可以手动维护ARP表项。
+
+### 手动维护 ARP 表
+
+如果能通过某个方式知道容器的 IP 和 MAC 地址对应关系，只要更新到每个节点，就能实现网络的连通。
+
+但是，需要维护的是每个容器里面的 ARP 表项，因为最终通信的双方是容器。到每个容器里面（所有的 network namespace）去更新对应的 ARP 表，是件工作量很大的事情，而且容器的创建和删除还是动态的。linux 提供了一个解决方案，vtep 可以作为 arp 代理，回复 arp 请求，也就是说只要 vtep interface 知道对应的 IP - MAC 关系，在接收到容器发来的 ARP 请求时可以直接作出应答。这样的话，我们只需要更新 vtep interface 上 ARP 表项就行了。
+
+```shell
+[root@test-1 ~]# ip link add vxlan1 type vxlan id 2 dstport 4789  dev eth0 nolearning proxy
+```
+
+`proxy`表示 vtep 承担ARP代理的功能。手动添加表项
+
+```shell
+[root@test-1 ~]# bridge fdb append 00:00:00:00:00:00 dev vxlan1 dst 10.10.10.9
+[root@test-1 ~]# bridge fdb append 4e:e9:90:34:2e:b5 dev vxlan1 dst 10.10.10.9
+# 添加 IP-MAC对应关系
+[root@test-1 ~]# ip neigh add 192.168.1.4 lladdr 4e:e9:90:34:2e:b5 dev vxlan0
+```
+
+## 优秀资料
+
+[linux 上实现 vxlan 网络](http://cizixs.com/2017/09/28/linux-vxlan)
