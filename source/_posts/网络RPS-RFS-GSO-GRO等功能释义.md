@@ -6,6 +6,7 @@ tags:
   - RSS
   - RPS
   - RFS
+  - XPS
   - LSO
   - TSO
   - GSO
@@ -16,7 +17,9 @@ tags:
 
  内核代码版本号为 3.10.105。
 
-## RSS
+## 释义与代码分析
+
+### RSS
 
 RSS(Receive Side Scaling)是一种能够在多处理器系统下使接收报文在多个CPU之间高效分发的网卡驱动技术。
 
@@ -36,14 +39,14 @@ RSS需要硬件支持。网卡接收到网络数据包后，要发送一个硬�
 解决方法是将一个queue的中断绑定到唯一的一个核上去，从而避免了乱序问题。
 同时如果网络流量大的时候，可以将软中断均匀的分散到各个核上，避免CPU成为瓶颈。
 
-利用合理的中断绑定脚本 set_irq_affinity.sh。
+利用合理的中断绑定脚本 set_irq_affinity.sh(网上很多资源)。
 ```
 
 如果硬件不支持RSS的话，那就可能需要下面的技术。
 
-## RPS
+### RPS
 
-RPS，即Receive Package Steering，其原理是单纯地以软件方式实现接收的报文在cpu之间平均分配，即利用报文的hash值找到匹配的cpu，然后将报文送至该cpu对应的backlog队列中进行下一步的处理。
+RPS，即Receive Package Steering，其原理是单纯地以软件方式实现接收的报文在cpu之间平均分配，即利用报文的hash值找到匹配的cpu，然后将报文送至该cpu对应的backlog队列中进行下一步的处理。于 kernel 2.6.35 添加此特性。
 
 报文hash值，可以是由网卡计算得到，也可以是由软件计算得到，具体的计算也因报文协议不同而有所差异，以tcp报文为例，tcp报文的hash值是根据四元组信息，即源ip、源端口、目的ip和目的端口进行hash计算得到的。
 
@@ -188,12 +191,57 @@ int netif_rx(struct sk_buff *skb)
 }
 ```
 
-## RFS
+RPS是接收报文的时候处理，而XPS是发送报文的时候处理器优化。
 
-RPS只是根据报文的hash值从分发处理报文的cpu列表中选取一个目标cpu，这样虽然负载均衡的效果很好，但是当**用户态**处理报文的cpu和内核处理报文软中断的cpu不同的时候，就会导致cpu的缓存不命中，影响性能。而RFS(Receive Flow Steering)就是用来处理这种情况的，RFS的目标是通过指派处理报文的应用程序所在的cpu来在内核态处理报文，以此来增加cpu的**缓存命中率**。所以RFS相比于RPS，主要差别就是在选取分发处理报文的目标cpu上，而**RFS还需要依靠RPS提供的机制进行报文的后续处理**。
+### XPS
+
+XPS，全称为Transmit Packet Steering，是软件支持的发包时的多队列，于 kernel 2.6.38 添加此特性。
+
+通常 RPS 和 XPS 同id的队列选择的CPU相同，这也是防止不同CPU切换时性能消耗。
+
+Linux通过配置文件的方式指定哪些cpu核参与到报文的分发处理，配置文件存放的路径是：'/sys/class/net/(dev)/queues/tx-(n)/rps_cpus'。例如：
+
+```shell
+# 1010101
+# echo 85 > /sys/class/net/eth0/queues/rx-0/xps_cpus
+```
+
+内核中有关xps最主要的函数就是 'get_xps_queue' (关于配置如何映射到内核可参考RPS)。
+
+```c
+u16 __netdev_pick_tx(struct net_device *dev, struct sk_buff *skb)
+{
+	struct sock *sk = skb->sk;
+	int queue_index = sk_tx_queue_get(sk);
+	/*发送队列的index不合法 或者 
+	ooo_okay 不为0时重新获取发送队列
+	*/
+  	/*ooo是 out of order，
+  	ooo_okay 标志表示流中没有未完成的数据包，所以发送队列可以改变而没有产生乱序数据包的风险。
+    传输层负责适当地设置ooo_okay。 例如，TCP在连接的所有数据已被确认时设置标志。
+    */
+	if (queue_index < 0 || skb->ooo_okay ||
+	    queue_index >= dev->real_num_tx_queues) {
+		int new_index = get_xps_queue(dev, skb);
+		if (new_index < 0)
+			new_index = skb_tx_hash(dev, skb);
+
+		if (queue_index != new_index && sk &&
+		    rcu_access_pointer(sk->sk_dst_cache))
+			sk_tx_queue_set(sk, new_index);
+
+		queue_index = new_index;
+	}
+	return queue_index;
+}
+```
+
+### RFS
+
+RPS只是根据报文的hash值从分发处理报文的cpu列表中选取一个目标cpu，这样虽然负载均衡的效果很好，但是当**用户态**处理报文的cpu和内核处理报文软中断的cpu不同的时候，就会导致cpu的缓存不命中，影响性能。而RFS(Receive Flow Steering)就是用来处理这种情况的，RFS的目标是通过指派处理报文的应用程序所在的cpu来在内核态处理报文，以此来增加cpu的**缓存命中率**。所以RFS相比于RPS，主要差别就是在选取分发处理报文的目标cpu上，而**RFS还需要依靠RPS提供的机制进行报文的后续处理**。于 kernel 2.6.35 添加此特性。
 　　RFS实现指派处理报文的应用程序所在的cpu来在内核态处理报文这一目标主要是依靠两个流表来实现的，其中一个是设备流表，记录的是上次在内核态处理该流中报文的cpu；另外一个是全局的socket流表，记录的是流中的报文渴望被处理的目标cpu。
 
-### 设备流表
+#### 设备流表
 
 ```c
 struct netdev_rx_queue {
@@ -219,7 +267,7 @@ struct rps_dev_flow {
 
 'struct rps_dev_flow'类型弹性数组大小由配置文件' /sys/class/net/(dev)/queues/rx-(n)/rps_flow_cnt'进行指定的。指定方式可参考RPS一节。
 
-### 全局socket流表
+#### 全局socket流表
 
 rps_sock_flow_table是一个全局的数据流表，这个表中包含了数据流渴望被处理的CPU。这个CPU是当前处理流中报文的应用程序所在的CPU。全局socket流表会在调recvmsg，sendmsg (特别是inet_accept(), inet_recvmsg(), inet_sendmsg(), inet_sendpage() and tcp_splice_read())，被设置或者更新。
 全局socket流表rps_sock_flow_table的定义如下：
@@ -347,7 +395,7 @@ done:
 }
 ```
 
-## LSO、TSO 和 GSO
+### LSO、TSO 和 GSO
 
 计算机网络上传输的数据基本单位是离散的网包，既然是网包，就有大小限制，这个限制就是 MTU（Maximum Transmission Unit）的大小，一般是1500字节。比如我们想发送很多数据出去，经过os协议栈的时候，会自动帮你拆分成几个不超过MTU的网包。然而，这个拆分是比较费计算资源的（比如很多时候还要计算分别的checksum），由 CPU 来做的话，往往会造成使用率过高。那可不可以把这些简单重复的操作 offload 到网卡上呢？
 
@@ -366,7 +414,7 @@ done:
 - GSO关闭， TSO开启：同GSO开启， TSO开启。
 - GSO关闭， TSO关闭：不推迟分段，在tcp_sendmsg中直接发送MSS大小的数据包。
 
-### 开启GSO/TSO
+#### 开启GSO/TSO
 
 驱动程序在注册网卡设备的时候默认开启GSO: NETIF_F_GSO。
 
@@ -398,7 +446,7 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 }
 ```
 
-### 是否推迟分段
+#### 是否推迟分段
 
 GSO/TSO是否开启是保存在dev->features中，而设备和路由关联，当我们查询到路由后就可以把配置保存在sock中。
 
@@ -419,7 +467,7 @@ int tcp_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 }
 ```
 
-#### sk_setup_caps
+##### sk_setup_caps
 
 ```c
 void sk_setup_caps(struct sock *sk, struct dst_entry *dst)
@@ -443,7 +491,7 @@ void sk_setup_caps(struct sock *sk, struct dst_entry *dst)
 
 从上面可以看出，如果设备开启了GSO，sock都会将TSO标志打开，但是注意这和硬件是否开启TSO无关，硬件的TSO取决于硬件自身特性的支持。
 
-#### sk_can_gso
+##### sk_can_gso
 
 ```c
 static inline bool sk_can_gso(const struct sock *sk)
@@ -453,7 +501,7 @@ static inline bool sk_can_gso(const struct sock *sk)
 }
 ```
 
-#### net_gso_ok
+##### net_gso_ok
 
 ```c
 
@@ -467,11 +515,11 @@ static inline bool net_gso_ok(netdev_features_t features, int gso_type)
 
 由于tcp 在sk_setup_caps中sk->sk_route_caps也被设置有SKB_GSO_TCPV4，所以整个sk_can_gso成立。
 
-### GSO的数据包长度
+#### GSO的数据包长度
 
 对紧急数据包或GSO/TSO都不开启的情况，才不会推迟发送， 默认使用当前MSS。开启GSO后，tcp_send_mss返回mss和单个skb的GSO大小，为mss的整数倍。
 
-#### tcp_send_mss
+##### tcp_send_mss
 
 ```c
 static int tcp_send_mss(struct sock *sk, int *size_goal, int flags)
@@ -487,7 +535,7 @@ static int tcp_send_mss(struct sock *sk, int *size_goal, int flags)
 }
 ```
 
-#### tcp_xmit_size_goal
+##### tcp_xmit_size_goal
 
 ```c
 static unsigned int tcp_xmit_size_goal(struct sock *sk, u32 mss_now,
@@ -541,7 +589,7 @@ static unsigned int tcp_xmit_size_goal(struct sock *sk, u32 mss_now,
 }
 ```
 
-#### tcp_sendmsg
+##### tcp_sendmsg
 
 应用程序send()数据后，会在tcp_sendmsg中尝试在同一个skb，保存size_goal大小的数据，然后再通过tcp_push把这些包通过tcp_write_xmit发出去。
 
@@ -549,7 +597,7 @@ static unsigned int tcp_xmit_size_goal(struct sock *sk, u32 mss_now,
 
 最终会调用tcp_push发送skb，而tcp_push又会调用tcp_write_xmit。tcp_sendmsg已经把数据按照GSO最大的size，放到一个个的skb中， 最终调用tcp_write_xmit发送这些GSO包。tcp_write_xmit会检查当前的拥塞窗口，还有nagle测试，tsq检查来决定是否能发送整个或者部分的skb， 如果只能发送一部分，则需要调用tso_fragment做切分。最后通过tcp_transmit_skb发送， 如果发送窗口没有达到限制，skb中存放的数据将达到GSO最大值。
 
-#### tcp_write_xmit
+##### tcp_write_xmit
 
 ```c
 static bool tcp_write_xmit(struct sock *sk, unsigned int mss_now, int nonagle,
@@ -665,7 +713,7 @@ repair:
 
 其中tcp_init_tso_segs会设置skb的gso信息后文分析。我们看到tcp_write_xmit 会调用tso_fragment进行“tcp分段”。而分段的条件是skb->len > limit。这里的关键就是limit的值，我们看到在tso_segs > 1时，也就是开启gso的时候，limit的值是由tcp_mss_split_point得到的，也就是min(skb->len, window)，即发送窗口允许的最大值。在没有开启gso时limit就是当前的mss。
 
-#### tcp_init_tso_segs
+##### tcp_init_tso_segs
 
 ```c
 /* Initialize TSO state of a skb.
@@ -691,7 +739,7 @@ tcp_write_xmit最后会调用ip_queue_xmit发送skb，进入ip层。
 
 ![GSO-TSO流程图](/images/网络RPS-RFS-GSO-GRO等功能释义/GSO-TSO流程图.png)
 
-## UFO
+### UFO
 
 UFO(UDP fragmentation offload)，UPD的offload。
 
@@ -709,7 +757,7 @@ static void vxlan_setup(struct net_device *dev)
 
 还有其他driver也支持，例如 macvlan、tun、virtnet等。
 
-## LRO和GRO
+### LRO和GRO
 
 当网卡收到很多碎片包的时候，LRO (Large Receive Offload)可以辅助自动组合成一段较大的数据，一次性提交给 OS处理。
 
@@ -778,7 +826,7 @@ hw-tc-offload: off [fixed]
 
 ## 总结
 
-**发送侧**：
+**接收侧**：
 
 **RSS**是网卡驱动支持的多队列属性，队列通过中断绑定到不同的CPU，以实现流量负载。
 
@@ -786,15 +834,17 @@ hw-tc-offload: off [fixed]
 
 **RFS**是报文需要在用户态处理时，保证处理的CPU与内核相同，防止缓存miss而导致的消耗。
 
+LRO 和 GRO，多个报文组成一个大包上送协议栈。
+
+**发送侧**：
+
+**XPS** 软件多队列发送。
+
 **TSO**是利用网卡来对大数据包进行自动分段，降低CPU负载的技术。
 
 **GSO**是协议栈分段功能。分段之前判断是否支持TSO，支持则推迟到网卡分段。 **如果TSO开启，GSO会自动开启。**
 
 **UFO**类似TSO，不过只针对UDP报文。
-
-**接收侧**：
-
-LRO 和 GRO，多个报文组成一个大包上送协议栈。
 
 ## 优秀资料
 
