@@ -631,6 +631,518 @@ gid一直没有变过来，调试发现文件已经创建且写入函数返回�
 
 至此，关于几个namespace的介绍已简单完成。
 
+## Linux源码分析
+
+基于kernel 3.10.105分析。
+
+以上的实例大多基于`clone`来创建新的namespace，因此对namespace的分析基本就是分析`clone`函数有关namespace的部分。内核中`clone`实际也是调用的`do_fork`。
+
+直接进入`copy_process`分析。
+
+```C
+static struct task_struct *copy_process(unsigned long clone_flags,
+					unsigned long stack_start,
+					unsigned long stack_size,
+					int __user *child_tidptr,
+					struct pid *pid,
+					int trace)
+{
+  	int retval;
+	struct task_struct *p;
+	……
+    retval = -ENOMEM;
+	p = dup_task_struct(current);
+  	……
+    /*CLONE_NEWUSER 相关*/
+	retval = copy_creds(p, clone_flags);
+	if (retval < 0)
+		goto bad_fork_free;
+	……
+    /*另外5个 namespace flag*/
+	retval = copy_namespaces(clone_flags, p);
+	if (retval)
+		goto bad_fork_cleanup_mm;
+  	……
+}
+```
+
+### copy_creds
+
+`copy_creds`的作用是复制或创建凭证信息。
+
+```c
+int copy_creds(struct task_struct *p, unsigned long clone_flags)
+{
+	struct cred *new;
+	int ret;
+	……
+    /*以current为模块，创建新的cred*/
+	new = prepare_creds();
+	if (!new)
+		return -ENOMEM;
+
+	if (clone_flags & CLONE_NEWUSER) {
+		ret = create_user_ns(new);
+		if (ret < 0)
+			goto error_put;
+	}
+  	……
+}
+```
+
+```c
+int create_user_ns(struct cred *new)
+{
+  	/*parent_ns 为父进程的user namespace(一路copy)*/
+	struct user_namespace *ns, *parent_ns = new->user_ns;
+	kuid_t owner = new->euid;
+	kgid_t group = new->egid;
+	int ret;
+
+	if (parent_ns->level > 32)
+		return -EUSERS;
+
+	/*判断当前进程文件系统和命名空间的 挂载点、根目录项对象是否相同。相同返回0*/
+	if (current_chrooted())
+		return -EPERM;
+	/*创建者需要在父用户名空间中进行映射，否则我们将无法合理地告知创建user_namespace的用户空间。*/
+	if (!kuid_has_mapping(parent_ns, owner) ||
+	    !kgid_has_mapping(parent_ns, group))
+		return -EPERM;
+  	/*slab层快速获取user namespace空间*/
+	ns = kmem_cache_zalloc(user_ns_cachep, GFP_KERNEL);
+	if (!ns)
+		return -ENOMEM;
+	/*分配INODE number*/
+	ret = proc_alloc_inum(&ns->proc_inum);
+	if (ret) {
+		kmem_cache_free(user_ns_cachep, ns);
+		return ret;
+	}
+	/*初始化ns数据*/
+	atomic_set(&ns->count, 1);
+	/* Leave the new->user_ns reference with the new user namespace. */
+	ns->parent = parent_ns;
+	ns->level = parent_ns->level + 1;
+	ns->owner = owner;
+	ns->group = group;
+
+	/* Inherit USERNS_SETGROUPS_ALLOWED from our parent */
+	mutex_lock(&userns_state_mutex);
+	ns->flags = parent_ns->flags;
+	mutex_unlock(&userns_state_mutex);
+	/*使用与init相同的功能*/
+	set_cred_user_ns(new, ns);
+	/*更新挂载规则*/
+	update_mnt_policy(ns);
+	return 0;
+}
+```
+
+### copy_namespaces
+
+核心结构`nsproxy`
+
+```c
+struct nsproxy {
+	atomic_t count;
+	struct uts_namespace *uts_ns;
+	struct ipc_namespace *ipc_ns;
+	struct mnt_namespace *mnt_ns;
+	struct pid_namespace *pid_ns;
+	struct net 	     *net_ns;
+};
+```
+
+```c
+int copy_namespaces(unsigned long flags, struct task_struct *tsk)
+{
+	struct nsproxy *old_ns = tsk->nsproxy;
+  	/*获取任务的客观上下文。
+  	task_struct 中有两个上下文(context)：
+  		real_cred，客观上下文，当其他一些任务试图影响这个部分的时候，就会使用这些部分。
+  		cred，主观上下文，一般在任务作用于另一个对象时使用，是文件，任务，键或其他。
+  	通常，这两个指针相同。具体细节可参考 struct cred结构(include/linux/cred.h)*/
+	struct user_namespace *user_ns = task_cred_xxx(tsk, user_ns);
+	struct nsproxy *new_ns;
+	int err = 0;
+
+	if (!old_ns)
+		return 0;
+	/*inc计数*/
+	get_nsproxy(old_ns);
+
+	if (!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+				CLONE_NEWPID | CLONE_NEWNET)))
+		return 0;
+
+	if (!ns_capable(user_ns, CAP_SYS_ADMIN)) {
+		err = -EPERM;
+		goto out;
+	}
+
+	/* CLONE_NEWIPC，旧的IPC namespace中的信号量无法访问；
+	   但是，CLONE_SYSVSEM 会共享父级信号量。 
+	 */
+	if ((flags & CLONE_NEWIPC) && (flags & CLONE_SYSVSEM)) {
+		err = -EINVAL;
+		goto out;
+	}
+	/*为进程创建新的相关namespace*/
+	new_ns = create_new_namespaces(flags, tsk, user_ns, tsk->fs);
+	if (IS_ERR(new_ns)) {
+		err = PTR_ERR(new_ns);
+		goto out;
+	}
+	tsk->nsproxy = new_ns;
+
+out:
+	put_nsproxy(old_ns);
+	return err;
+}
+```
+
+```c
+/*nsproxy 结构主要分配函数*/
+static struct nsproxy *create_new_namespaces(unsigned long flags,
+	struct task_struct *tsk, struct user_namespace *user_ns,
+	struct fs_struct *new_fs)
+{
+	struct nsproxy *new_nsp;
+	int err;
+	/*从slab层分配空间*/
+	new_nsp = create_nsproxy();
+	if (!new_nsp)
+		return ERR_PTR(-ENOMEM);
+	/*MNT namespace 拷贝（分配、初始化）*/
+	new_nsp->mnt_ns = copy_mnt_ns(flags, tsk->nsproxy->mnt_ns, user_ns, new_fs);
+	if (IS_ERR(new_nsp->mnt_ns)) {
+		err = PTR_ERR(new_nsp->mnt_ns);
+		goto out_ns;
+	}
+  	/*UTS namespace 拷贝（分配、初始化）*/
+	new_nsp->uts_ns = copy_utsname(flags, user_ns, tsk->nsproxy->uts_ns);
+	if (IS_ERR(new_nsp->uts_ns)) {
+		err = PTR_ERR(new_nsp->uts_ns);
+		goto out_uts;
+	}
+	/*IPC namespace 拷贝（分配、初始化）*/
+	new_nsp->ipc_ns = copy_ipcs(flags, user_ns, tsk->nsproxy->ipc_ns);
+	if (IS_ERR(new_nsp->ipc_ns)) {
+		err = PTR_ERR(new_nsp->ipc_ns);
+		goto out_ipc;
+	}
+	/*PID namespace 拷贝（分配、初始化）*/
+	new_nsp->pid_ns = copy_pid_ns(flags, user_ns, tsk->nsproxy->pid_ns);
+	if (IS_ERR(new_nsp->pid_ns)) {
+		err = PTR_ERR(new_nsp->pid_ns);
+		goto out_pid;
+	}
+	/*NET namespace 拷贝（分配、初始化）*/
+	new_nsp->net_ns = copy_net_ns(flags, user_ns, tsk->nsproxy->net_ns);
+	if (IS_ERR(new_nsp->net_ns)) {
+		err = PTR_ERR(new_nsp->net_ns);
+		goto out_net;
+	}
+	return new_nsp;
+  	……
+}
+```
+
+#### copy_mnt_ns
+
+```c
+struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+		struct user_namespace *user_ns, struct fs_struct *new_fs)
+{
+	struct mnt_namespace *new_ns;
+
+	BUG_ON(!ns);
+  	/*原子增计数*/
+	get_mnt_ns(ns);
+
+	if (!(flags & CLONE_NEWNS))
+		return ns;
+
+	new_ns = dup_mnt_ns(ns, user_ns, new_fs);
+	/*原子减计数*/
+	put_mnt_ns(ns);
+	return new_ns;
+}
+```
+
+```c
+/*分配一个新的名称空间结构，并使用从传入的任务结构的名称空间复制的内容填充它。*/
+static struct mnt_namespace *dup_mnt_ns(struct mnt_namespace *mnt_ns,
+		struct user_namespace *user_ns, struct fs_struct *fs)
+{
+	struct mnt_namespace *new_ns;
+	struct vfsmount *rootmnt = NULL, *pwdmnt = NULL;
+	struct mount *p, *q;
+	struct mount *old = mnt_ns->root;
+	struct mount *new;
+	int copy_flags;
+	/*分配新的mnt_namespace并进行初始化*/
+	new_ns = alloc_mnt_ns(user_ns);
+	if (IS_ERR(new_ns))
+		return new_ns;
+	/*加锁读写信号量namespace_sem*/
+	namespace_lock();
+	/* 复制mnt树形拓扑 */
+	copy_flags = CL_COPY_ALL | CL_EXPIRE;
+	if (user_ns != mnt_ns->user_ns)
+		copy_flags |= CL_SHARED_TO_SLAVE | CL_UNPRIVILEGED;
+  	/*主要函数，暂不分析。TBD*/
+	new = copy_tree(old, old->mnt.mnt_root, copy_flags);
+	if (IS_ERR(new)) {
+		namespace_unlock();
+		free_mnt_ns(new_ns);
+		return ERR_CAST(new);
+	}
+	new_ns->root = new;
+	br_write_lock(&vfsmount_lock);
+	list_add_tail(&new_ns->list, &new->mnt_list);
+	br_write_unlock(&vfsmount_lock);
+
+	/*切换tsk-> fs - > *元素并将新的vfsmount标记为属于新的命名空间。 
+	我们已经获得了私有的fs_struct，所以不需要tsk-> fs-> lock。
+	 */
+	p = old;
+	q = new;
+	while (p) {
+		q->mnt_ns = new_ns;
+		if (fs) {
+			if (&p->mnt == fs->root.mnt) {
+				fs->root.mnt = mntget(&q->mnt);
+				rootmnt = &p->mnt;
+			}
+			if (&p->mnt == fs->pwd.mnt) {
+				fs->pwd.mnt = mntget(&q->mnt);
+				pwdmnt = &p->mnt;
+			}
+		}
+		p = next_mnt(p, old);
+		q = next_mnt(q, new);
+	}
+	namespace_unlock();
+
+	if (rootmnt)
+		mntput(rootmnt);
+	if (pwdmnt)
+		mntput(pwdmnt);
+
+	return new_ns;
+}
+```
+
+#### copy_utsname
+
+```c
+struct uts_namespace *copy_utsname(unsigned long flags,
+	struct user_namespace *user_ns, struct uts_namespace *old_ns)
+{
+	struct uts_namespace *new_ns;
+
+	BUG_ON(!old_ns);
+	get_uts_ns(old_ns);
+
+	if (!(flags & CLONE_NEWUTS))
+		return old_ns;
+
+	new_ns = clone_uts_ns(user_ns, old_ns);
+
+	put_uts_ns(old_ns);
+	return new_ns;
+}
+```
+
+```c
+static struct uts_namespace *clone_uts_ns(struct user_namespace *user_ns,
+					  struct uts_namespace *old_ns)
+{
+	struct uts_namespace *ns;
+	int err;
+	/*分配空间*/
+	ns = create_uts_ns();
+	if (!ns)
+		return ERR_PTR(-ENOMEM);
+	/*分配新的inode number*/
+	err = proc_alloc_inum(&ns->proc_inum);
+	if (err) {
+		kfree(ns);
+		return ERR_PTR(err);
+	}
+
+	down_read(&uts_sem);
+	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
+	ns->user_ns = get_user_ns(user_ns);
+	up_read(&uts_sem);
+	return ns;
+}
+```
+
+#### copy_ipcs
+
+```c
+struct ipc_namespace *copy_ipcs(unsigned long flags,
+	struct user_namespace *user_ns, struct ipc_namespace *ns)
+{
+	if (!(flags & CLONE_NEWIPC))
+		return get_ipc_ns(ns);
+	return create_ipc_ns(user_ns, ns);
+}
+```
+
+```c
+
+static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
+					   struct ipc_namespace *old_ns)
+{
+	struct ipc_namespace *ns;
+	int err;
+
+	ns = kmalloc(sizeof(struct ipc_namespace), GFP_KERNEL);
+	if (ns == NULL)
+		return ERR_PTR(-ENOMEM);
+
+	err = proc_alloc_inum(&ns->proc_inum);
+	if (err) {
+		kfree(ns);
+		return ERR_PTR(err);
+	}
+
+	atomic_set(&ns->count, 1);
+  	/*消息队列初始化*/
+	err = mq_init_ns(ns);
+	if (err) {
+		proc_free_inum(ns->proc_inum);
+		kfree(ns);
+		return ERR_PTR(err);
+	}
+	atomic_inc(&nr_ipc_ns);
+	/*信号量初始化*/
+	sem_init_ns(ns);
+  	/*信号初始化？TBD*/
+	msg_init_ns(ns);
+  	/*共享内存初始化*/
+	shm_init_ns(ns);
+
+	/*IPC 创建通知*/
+	ipcns_notify(IPCNS_CREATED);
+	register_ipcns_notifier(ns);
+
+	ns->user_ns = get_user_ns(user_ns);
+	return ns;
+}
+```
+
+#### copy_pid_ns
+
+```c
+struct pid_namespace *copy_pid_ns(unsigned long flags,
+	struct user_namespace *user_ns, struct pid_namespace *old_ns)
+{
+	if (!(flags & CLONE_NEWPID))
+		return get_pid_ns(old_ns);
+  	/*当前pid namespace不是old_ns（之前copy的current），可能已经发生了进程切换*/
+	if (task_active_pid_ns(current) != old_ns)
+		return ERR_PTR(-EINVAL);
+	return create_pid_namespace(user_ns, old_ns);
+}
+```
+
+```c
+static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns,
+	struct pid_namespace *parent_pid_ns)
+{
+	struct pid_namespace *ns;
+	unsigned int level = parent_pid_ns->level + 1;
+	int i;
+	int err;
+
+	if (level > MAX_PID_NS_LEVEL) {
+		err = -EINVAL;
+		goto out;
+	}
+
+	err = -ENOMEM;
+	ns = kmem_cache_zalloc(pid_ns_cachep, GFP_KERNEL);
+	if (ns == NULL)
+		goto out;
+
+	ns->pidmap[0].page = kzalloc(PAGE_SIZE, GFP_KERNEL);
+	if (!ns->pidmap[0].page)
+		goto out_free;
+
+	ns->pid_cachep = create_pid_cachep(level + 1);
+	if (ns->pid_cachep == NULL)
+		goto out_free_map;
+
+	err = proc_alloc_inum(&ns->proc_inum);
+	if (err)
+		goto out_free_map;
+
+	kref_init(&ns->kref);
+	ns->level = level;
+	ns->parent = get_pid_ns(parent_pid_ns);
+	ns->user_ns = get_user_ns(user_ns);
+	ns->nr_hashed = PIDNS_HASH_ADDING;
+	INIT_WORK(&ns->proc_work, proc_cleanup_work);
+
+	set_bit(0, ns->pidmap[0].page);
+	atomic_set(&ns->pidmap[0].nr_free, BITS_PER_PAGE - 1);
+
+	for (i = 1; i < PIDMAP_ENTRIES; i++)
+		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
+
+	return ns;
+
+out_free_map:
+	kfree(ns->pidmap[0].page);
+out_free:
+	kmem_cache_free(pid_ns_cachep, ns);
+out:
+	return ERR_PTR(err);
+}
+```
+
+#### copy_net_ns
+
+```C
+struct net *copy_net_ns(unsigned long flags,
+			struct user_namespace *user_ns, struct net *old_net)
+{
+	struct net *net;
+	int rv;
+
+	if (!(flags & CLONE_NEWNET))
+		return get_net(old_net);
+	/*分配新的net结构*/
+	net = net_alloc();
+	if (!net)
+		return ERR_PTR(-ENOMEM);
+
+	get_user_ns(user_ns);
+
+	mutex_lock(&net_mutex);
+	rv = setup_net(net, user_ns);
+	if (rv == 0) {
+		rtnl_lock();
+		list_add_tail_rcu(&net->list, &net_namespace_list);
+		rtnl_unlock();
+	}
+	mutex_unlock(&net_mutex);
+	if (rv < 0) {
+		put_user_ns(user_ns);
+		net_drop_ns(net);
+		return ERR_PTR(rv);
+	}
+	return net;
+}
+```
+
+
+
 ## 参考资料
 
 [DOCKER背后的内核知识——NAMESPACE资源隔离](http://www.sel.zju.edu.cn/?p=556)
@@ -643,3 +1155,4 @@ gid一直没有变过来，调试发现文件已经创建且写入函数返回�
 
 [DOCKER基础技术：LINUX NAMESPACE（下）](https://coolshell.cn/articles/17029.html)
 
+[how to find out namespace of a particular process?](https://unix.stackexchange.com/questions/113530/how-to-find-out-namespace-of-a-particular-process)
