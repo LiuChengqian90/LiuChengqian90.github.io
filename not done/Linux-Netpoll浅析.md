@@ -44,27 +44,85 @@ netpoll结构用来描述接收和发送数据包的必要信息。
 
 ```c
 struct netpoll {
-	struct net_device *dev;				/**/
-	char dev_name[IFNAMSIZ];			/**/
-	const char *name;					/**/
-  	/**/
+	struct net_device *dev;				/*绑定的设备*/
+	char dev_name[IFNAMSIZ];			/*设备名*/
+	const char *name;					/*netpoll实例的名称*/
+  	/*接收数据包的接口*/
 	void (*rx_hook)(struct netpoll *, int, char *, int);
-	/**/
+	/*本地、远端IP地址*/
 	union inet_addr local_ip, remote_ip;
-	bool ipv6;							/**/
-	u16 local_port, remote_port;		/**/
-	u8 remote_mac[ETH_ALEN];			/**/
+	bool ipv6;							/*ipv6支持情况*/
+	u16 local_port, remote_port;		/*本地、远端port*/
+	u8 remote_mac[ETH_ALEN];			/*远端 mac地址*/
 
 	struct list_head rx; /* rx_np list element */
 	struct work_struct cleanup_work;
 };
 ```
 
+网络设备中，当支持netpoll时，必须实现变量npinfo：
+
+```c
+struct net_device {
+……
+#ifdef CONFIG_NETPOLL
+	struct netpoll_info __rcu	*npinfo;
+#endif
+……
+}；
+```
 
 
 
+```c
+struct netpoll_info {
+	atomic_t refcnt;				/*引用计数*/
+	/*接收标志，NETPOLL_RX_ENABLED 或 NETPOLL_RX_DROP*/
+	unsigned long rx_flags;			
+	spinlock_t rx_lock;
+	struct semaphore dev_lock;
+  
+	struct list_head rx_np; /*注册的rx_hook的netpolls*/
+	struct sk_buff_head neigh_tx; /*请求回复的邻居请求列表*/
+	struct sk_buff_head txq;
+	struct delayed_work tx_work;
+
+	struct netpoll *netpoll;
+	struct rcu_head rcu;
+};
+```
+
+### 初始化
+
+#### 模块初始化
+
+```c
+static struct sk_buff_head skb_pool;
+……
+static int __init netpoll_init(void)
+{
+	skb_queue_head_init(&skb_pool);
+	return 0;
+}
+```
+
+#### 接口结构体初始化
+
+npinfo在函数`\_\_netpoll_setup`中进行分配初始化，查询代码可知仅有vlan、bond和bridge类型的接口注册函数调用`\_\_netpoll_setup`。
 
 
+
+接口结构体信息注册
+
+接口信息注册->接口的类型
+
+### rx
+
+netpoll_receive_skb
+
+### tx
+
+netpoll_send_skb
 
 netconsole netpoll
 
