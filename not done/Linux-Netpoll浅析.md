@@ -110,9 +110,11 @@ static int __init netpoll_init(void)
 
 npinfo在函数`\_\_netpoll_setup`中进行分配初始化，查询代码可知仅有vlan、bond和bridge类型的接口注册函数调用`\_\_netpoll_setup`。
 
+下面以vlan为例进行分析。
 
+具体不知道哪块调用初始化npinfo。
 
-接口结构体信息注册
+netif_napi_add
 
 接口信息注册->接口的类型
 
@@ -130,3 +132,6 @@ netconsole netpoll
 
 ## 优秀资料
 
+[netpoll浅析](http://blog.csdn.net/lucien_cc/article/details/11731501)
+
+[Linux内核的netpoll框架与netconsole](http://blog.csdn.net/dog250/article/details/45788497)
