@@ -72,8 +72,6 @@ struct net_device {
 }；
 ```
 
-
-
 ```c
 struct netpoll_info {
 	atomic_t refcnt;				/*引用计数*/
@@ -110,9 +108,78 @@ static int __init netpoll_init(void)
 
 npinfo在函数`\_\_netpoll_setup`中进行分配初始化，查询代码可知仅有vlan、bond和bridge类型的接口注册函数调用`\_\_netpoll_setup`。
 
-下面以vlan为例进行分析。
+```C
+int __netpoll_setup(struct netpoll *np, struct net_device *ndev, gfp_t gfp)
+{
+	struct netpoll_info *npinfo;
+	const struct net_device_ops *ops;
+	unsigned long flags;
+	int err;
 
-具体不知道哪块调用初始化npinfo。
+    /*设备netpoll信息初始化，dev指针、dev_name和工作队列*/
+	np->dev = ndev;
+	strlcpy(np->dev_name, ndev->name, IFNAMSIZ);
+	INIT_WORK(&np->cleanup_work, netpoll_async_cleanup);
+	/*设备禁用*/
+	if ((ndev->priv_flags & IFF_DISABLE_NETPOLL) ||
+	    !ndev->netdev_ops->ndo_poll_controller) {
+		np_err(np, "%s doesn't support polling, aborting\n",
+		       np->dev_name);
+		err = -ENOTSUPP;
+		goto out;
+	}
+
+	if (!ndev->npinfo) {
+		npinfo = kmalloc(sizeof(*npinfo), gfp);
+		if (!npinfo) {
+			err = -ENOMEM;
+			goto out;
+		}
+
+		npinfo->rx_flags = 0;
+		INIT_LIST_HEAD(&npinfo->rx_np);
+
+		spin_lock_init(&npinfo->rx_lock);
+		sema_init(&npinfo->dev_lock, 1);
+		skb_queue_head_init(&npinfo->neigh_tx);
+		skb_queue_head_init(&npinfo->txq);
+		INIT_DELAYED_WORK(&npinfo->tx_work, queue_process);
+
+		atomic_set(&npinfo->refcnt, 1);
+
+		ops = np->dev->netdev_ops;
+		if (ops->ndo_netpoll_setup) {
+			err = ops->ndo_netpoll_setup(ndev, npinfo, gfp);
+			if (err)
+				goto free_npinfo;
+		}
+	} else {
+		npinfo = rtnl_dereference(ndev->npinfo);
+		atomic_inc(&npinfo->refcnt);
+	}
+
+	npinfo->netpoll = np;
+
+	if (np->rx_hook) {
+		spin_lock_irqsave(&npinfo->rx_lock, flags);
+		npinfo->rx_flags |= NETPOLL_RX_ENABLED;
+		list_add_tail(&np->rx, &npinfo->rx_np);
+		spin_unlock_irqrestore(&npinfo->rx_lock, flags);
+	}
+
+	/* last thing to do is link it to the net device structure */
+	rcu_assign_pointer(ndev->npinfo, npinfo);
+
+	return 0;
+
+free_npinfo:
+	kfree(npinfo);
+out:
+	return err;
+}
+```
+
+
 
 netif_napi_add
 
