@@ -419,7 +419,7 @@ Network namespace主要提供了关于网络资源的隔离，包括网络设备
 对network namespace的使用其实就是在创建的时候添加`CLONE_NEWNET`标识位。可以通过命令行工具`ip`创建network namespace。
 
 ```shell
-# ip netnas add <network namespace name>	// 创建net namespace
+# ip netns add <network namespace name>	// 创建net namespace
 # ip netns [list]							// 显示当前所有net namespace
 # ip netns delete <network namespace name>	// 删除net namespace
 # ip netns exec <network namespace name> <command>	// 在net namespace中执行命令
@@ -432,7 +432,7 @@ Network namespace主要提供了关于网络资源的隔离，包括网络设备
 
 ```shell
 # ip netns add test_ns
-# ip netns exec nstest ip addr
+# ip netns exec test_ns ip addr
 1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN qlen 1
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
 ```
