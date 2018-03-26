@@ -5,7 +5,7 @@ categorie: openvswitch
 tags:
 ---
 
-## 编译
+## 编译安装
 
 参照官网，也查了些资料，编译期间出现些问题，先将正确的流程及问题解决方法记录如下。
 
@@ -140,14 +140,7 @@ tags:
       make[2]: Entering directory `/usr/src/kernels/3.10.0-693.11.1.el7.x86_64'
         INSTALL /root/openvswitch-2.9.0/datapath/linux/openvswitch.ko
       Can't read private key
-        INSTALL /root/openvswitch-2.9.0/datapath/linux/vport-geneve.ko
-      Can't read private key
-        INSTALL /root/openvswitch-2.9.0/datapath/linux/vport-gre.ko
-      Can't read private key
-        INSTALL /root/openvswitch-2.9.0/datapath/linux/vport-lisp.ko
-      Can't read private key
-        INSTALL /root/openvswitch-2.9.0/datapath/linux/vport-stt.ko
-      Can't read private key
+       ………………
         INSTALL /root/openvswitch-2.9.0/datapath/linux/vport-vxlan.ko
       Can't read private key
         DEPMOD  3.10.0-693.11.1.el7.x86_64
@@ -168,7 +161,7 @@ tags:
       # ls -al
       # date
       // 如果不是最新，从源码目录`datapath/linux`中把几个ko文件重新移入过去。
-      // 之后改写文件，让其可以开机加载就可以了
+      // 之后改写文件，让其可以开机加载就可以了（不想重启就手动加载）
       # cat /etc/sysconfig/modules/ovs.modules 
       #!/bin/sh
 
@@ -250,4 +243,80 @@ tags:
 
 ## 升级
 
-TBD
+1. 终止进程
+
+   本例为默认目录
+
+   ```shell
+   # kill `cd /usr/local/var/run/openvswitch && cat ovsdb-server.pid ovs-vswitchd.pid`
+   ```
+
+2. 安装新的openvswitch版本
+
+   - 不改变配置直接编译即可；
+   - 更改配置（目录及编译选项）。
+
+3. 升级数据库
+
+   - 库内无重要数据则直接删除重建；
+
+   - 有重要数据则先备份数据库，然后利用`ovsdb-toolconvert`来进行升级
+
+     ```shell
+     # ovsdb-tool convert /usr/local/etc/openvswitch/conf.db vswitchd/vswitch.ovsschema
+     ```
+
+4. 启动进程。
+
+   ```shell
+   # ovs-ctl start
+   ```
+
+## 热升级
+
+**一句话概括：**可利用 `ovs-ctl restar`一次性搞定，如果有内核修改则利用`ovs-ctl force-reload-kmod`。
+
+1. 升级仅涉及用户空间程序（实用程序、守护进程），确保新的版本与之前加载的内核模块兼容。
+
+2. 用户空间守护进程的升级意味着它们必须重新启动。重新启动守护进程意味着ovs-vswitchd守护进程中的openflow流将丢失。
+
+   恢复流量的一种方法是让控制器重新填充它。
+
+   另一种方法是使用像ovs-ofctl这样的工具保存以前的流程，然后在重新启动后重新添加它们。只有当新的开放vswitch接口保留旧的“端口”值时，恢复旧流才是准确的。
+
+   ```shell
+   // ovs-save 可以保存每个桥的流表。ovs-save COMMAND {bridge1|bridge2}
+   // ovs-ofctl 封装而成。具体路径查找方式前面已写。
+   # /usr/share/openvswitch/scripts/ovs-save  save-flows br-int 
+   //进程重启之后可通过保存文件进行恢复
+   # ovs-ofctl replace-flows  br-int /tmp/ovs-save.WvZfM1zEhH/br-int.flows.dump  -O OpenFlow14 
+   ```
+
+3. 当新用户空间守护进程重新启动时，它们会自动刷新内核中的旧流设置。如果有数百个进入内核的新流程，但用户空间守护进程正在忙于从控制器或ovs-ofctl等实用程序中设置新的用户空间流量，则这可能会很耗时（冲突）。
+
+   打开vswitch数据库提供了一个通过open_vswitch表的`other_config:flow-restore-wait`列解决此问题的选项。有关详细信息，请参阅ovs-vswitchd.conf.db（5）[手册页](http://www.openvswitch.org/support/dist-docs/ovs-vswitchd.conf.db.5.html)。
+
+   ```shell
+   此选项热升级的过程如下：
+   1、终止ovs-vswitchd
+   2、设置`other_config:flow-restore-wait`为true
+   3、开启ovs-vswitchd
+   4、利用ovs-ofctl恢复流表
+   5、设置`other_config:flow-restore-wait`为false
+
+   ovs-ctl 选项 `restart` 和 `force-reload-kmod`利用了此过程。
+   ```
+
+4. 如果升级还涉及升级内核模块，则需要卸载旧的内核模块，并且应该加载新的内核模块。
+
+   这意味着属于开放vswitch的内核网络设备被重新创建，并且内核流程丢失。如果用户空间守护程序立即重新启动并且用户空间流尽快恢复，则可以减少流量的停机时间。
+
+   ```Shell
+   `force-reload-kmod`卸载 vport* 和 openvswitch模块，重装 openvswitch 模块。
+   ```
+
+ovs-ctl实用程序的重新启动功能仅重新启动用户空间守护程序，确保'ofport'值在重新启动时保持一致，使用ovs-ofctl实用程序还原用户空间流，并使用`other_config:flow-restore-wait`列保留交通宕机时间降至最低。
+
+ovs-ctl实用程序的`force-reload-kmod`函数完成了上述所有操作，但也用新的内核模块替换了旧的内核模块。
+
+打开debian，xenserver和rhel的vswitch启动脚本使用ovs-ctl的功能，并且建议这些功能也可用于其他软件平台。
