@@ -274,7 +274,7 @@ tags:
 
 ## 热升级
 
-**一句话概括：**可利用 `ovs-ctl restar`一次性搞定，如果有内核修改则利用`ovs-ctl force-reload-kmod`。
+**一句话概括：**可利用 `ovs-ctl restart`一次性搞定，如果有内核修改则利用`ovs-ctl force-reload-kmod`。
 
 1. 升级仅涉及用户空间程序（实用程序、守护进程），确保新的版本与之前加载的内核模块兼容。
 
@@ -288,6 +288,7 @@ tags:
    // ovs-save 可以保存每个桥的流表。ovs-save COMMAND {bridge1|bridge2}
    // ovs-ofctl 封装而成。具体路径查找方式前面已写。
    # /usr/share/openvswitch/scripts/ovs-save  save-flows br-int 
+
    //进程重启之后可通过保存文件进行恢复
    # ovs-ofctl replace-flows  br-int /tmp/ovs-save.WvZfM1zEhH/br-int.flows.dump  -O OpenFlow14 
    ```
@@ -320,3 +321,109 @@ ovs-ctl实用程序的重新启动功能仅重新启动用户空间守护程序�
 ovs-ctl实用程序的`force-reload-kmod`函数完成了上述所有操作，但也用新的内核模块替换了旧的内核模块。
 
 打开debian，xenserver和rhel的vswitch启动脚本使用ovs-ctl的功能，并且建议这些功能也可用于其他软件平台。
+
+## 升级实例
+
+验证升级构建的拓扑如下
+
+![升级拓扑](/images/Openvswitch-编译及升级/升级拓扑.png)
+
+过程如下
+
+1. br-tun、br-int、 qbr、netns创建
+
+   ```shell
+   # ovs-vsctl add-br br-tun 
+   # ovs-vsctl add-br br-int
+   # brctl addbr qbr0 
+   # ip netns add ns0
+   # ip netns exec ns0 ip link set dev lo up
+   ```
+
+2. br-tun、br-int 连接
+
+   ```shell
+   # ovs-vsctl add-port br-tun patch-int -- set Interface patch-int type=patch options:peer=patch-tun
+   # ovs-vsctl add-port br-int patch-tun -- set Interface patch-tun type=patch options:peer=patch-int
+   ```
+
+3. br-int、qbr连接
+
+   ```shell
+   # ip link add qvo type veth peer name qvb
+   # brctl addif qbr0 qvb 
+   # ovs-vsctl add-port br-int qvo 
+   # ifconfig qvb up;ifconfig qvo up; ifconfig qbr0 up;
+   ```
+
+4. qbr、ns连接
+
+   ```shell
+   # ip link add qn0 type veth peer name qn1
+   # brctl addif qbr0 qn0
+   # ip link set qn1 netns ns0
+   # ip netns exec ns0 ifconfig qn1 10.1.1.1/24 up
+   # ifconfig qn0 up
+   ```
+
+5. br-tun对端连接
+
+   ```shell
+   # ovs-vsctl add-port br-tun vxlan1 -- set interface vxlan1 type=vxlan options:remote_ip=192.168.32.5 options:local_ip=192.168.32.4 
+   //对端将remote_ip local_ip换一下位置
+   ```
+
+6. 进入对端netns ，ping本端netns内部ip地址，且在本端eth0接口抓包验证。
+
+   ![抓包](/images/Openvswitch-编译及升级/抓包.png)
+
+7. br-int 和 br-tun流表默认都是全通，所以修改一下，为了升级之后进行确认。
+
+   ![修改流表](/images/Openvswitch-编译及升级/修改流表.png)
+
+8. 升级！（升级之前的准备见上文，升级过程中一直ping）。
+
+   - 不升级内核
+
+     ```shell
+     # /usr/share/openvswitch/scripts/ovs-ctl restart  
+     Saving flows                                               [  OK  ]
+     Exiting ovsdb-server (119795)                              [  OK  ]
+     Starting ovsdb-server                                      [  OK  ]
+     system ID not configured, please use --system-id ... failed!
+     Configuring Open vSwitch system IDs                        [  OK  ]
+     Exiting ovs-vswitchd (119865)                              [  OK  ]
+     Starting ovs-vswitchd                                      [  OK  ]
+     Restoring saved flows                                      [  OK  ]
+     Enabling remote OVSDB managers                             [  OK  ]
+     ```
+
+     流量不中断。
+
+   - 升级内核
+
+     ```shell
+     # /usr/share/openvswitch/scripts/ovs-ctl force-reload-kmod
+     Detected internal interfaces: br-int br-tun                [  OK  ]
+     Saving flows                                               [  OK  ]
+     Exiting ovsdb-server (1278)                                [  OK  ]
+     Starting ovsdb-server                                      [  OK  ]
+     system ID not configured, please use --system-id ... failed!
+     Configuring Open vSwitch system IDs                        [  OK  ]
+     Exiting ovs-vswitchd (1304)                                [  OK  ]
+     Saving interface configuration                             [  OK  ]
+     Removing datapath: system@ovs-system                       [  OK  ]
+     Removing vport_vxlan module                                [  OK  ]
+     Removing openvswitch module                                [  OK  ]
+     Inserting openvswitch module                               [  OK  ]
+     Starting ovs-vswitchd                                      [  OK  ]
+     Restoring saved flows                                      [  OK  ]
+     Enabling remote OVSDB managers                             [  OK  ]
+     Restoring interface configuration                          [  OK  ]
+     ```
+
+     流量不中断。
+
+     **Notes**：升级的version >= 2.8.2 时，不会重新加载vport*内核模块，这是因为 `在RHEL 7.x上，遇到了一个由iptables启动脚本引起的错误，该脚本尝试删除与linux conntrack相关的所有内核模块。它无法卸载openvswitch内核模块，因为它有一个引用计数。但它成功地卸载了vport-geneve，并转而用上游的“geneve”内核模块。这会导致隧道断开。通过不加载基于vport的内核模块来避免上述情况。 ovs-vswitchd启动时将加载上游模块。`(参考[此处](https://github.com/openvswitch/ovs/commit/59d18a069a10b7bf63ab406650ae7c875ef4d3d3))。
+
+9. 验证接口及流表（流量不断基本就没什么问题）。
