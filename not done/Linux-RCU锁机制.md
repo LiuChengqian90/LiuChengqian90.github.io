@@ -262,7 +262,5 @@ void wait_rcu_gp(call_rcu_func_t crf)
 
 [深入理解 RCU 实现](http://blog.jobbole.com/106856/)
 
-[Linux 2.6内核中新的锁机制--RCU](https://www.ibm.com/developerworks/cn/linux/l-rcu/)
-
 [RCU synchronize原理分析](http://www.wowotech.net/kernel_synchronization/223.html)
 
