@@ -132,7 +132,7 @@ deploy是hexo部署页面时，静态网页提交的代码仓库及分支。
 # hexo new 'hello hexo'
 ```
 
-创建的文件默认放置在"source\\_posts"目录下。可编辑文件，添加一些内容或不修改。
+创建的文件默认放置在`source_posts`目录下。可编辑文件，添加一些内容或不修改。
 
 ```shell
 # hexo g

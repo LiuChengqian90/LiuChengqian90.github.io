@@ -427,3 +427,5 @@ ovs-ctl实用程序的`force-reload-kmod`函数完成了上述所有操作，但
      **Notes**：升级的version >= 2.8.2 时，不会重新加载vport*内核模块，这是因为 `在RHEL 7.x上，遇到了一个由iptables启动脚本引起的错误，该脚本尝试删除与linux conntrack相关的所有内核模块。它无法卸载openvswitch内核模块，因为它有一个引用计数。但它成功地卸载了vport-geneve，并转而用上游的“geneve”内核模块。这会导致隧道断开。通过不加载基于vport的内核模块来避免上述情况。 ovs-vswitchd启动时将加载上游模块。`(参考[此处](https://github.com/openvswitch/ovs/commit/59d18a069a10b7bf63ab406650ae7c875ef4d3d3))。
 
 9. 验证接口及流表（流量不断基本就没什么问题）。
+
+**Notes**：ovs在openstack环境中升级时，需要将openvswitch-agent先停止，以防止ovs相关进程终止时其自动拉起。
