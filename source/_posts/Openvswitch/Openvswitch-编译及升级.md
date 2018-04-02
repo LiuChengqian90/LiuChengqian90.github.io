@@ -1,8 +1,9 @@
 ---
 title: Ospenvswitch 编译及升级
 date: 2018-03-23 19:04:52
-categorie: openvswitch
+categories: openvswitch
 tags:
+  - ovs编译
 ---
 
 ## 编译安装
