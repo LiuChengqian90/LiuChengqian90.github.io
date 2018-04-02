@@ -9,7 +9,7 @@ tags:
   - ovs-vxlan
 ---
 
-ovs版本为 2.6.1。
+ovs版本为 2.8.2。
 
 ## OVS整体架构
 
@@ -19,11 +19,217 @@ OVS架构图如下，具体每个部件功能不具体分析，本文主要涉�
 
 ## OVS接口类型
 
-执行命令'ovs-vsctl show' 或者 'ovs-dpctl show'(显示默认datapath)，来查看ovs接口信息时，常会看到接口类型，以下对OVS中有哪些接口类型及不同接口类型的接口之间的区别进行分析。
+执行命令`ovs-vsctl show` 或者 `ovs-dpctl show`(显示默认datapath)，来查看ovs接口信息时，常会看到接口类型，以下对OVS中有哪些接口类型及不同接口类型的接口之间的区别进行分析。
 
-### patch
+在源码中有这么一个函数：
 
-patch port类似于Linux系统中的`veth`，总是成对出现，分别连接在两个网桥上，从一个patch port收到的数据包会被转发到另一个patch port。
+```c
+static const char *
+get_vport_type(const struct dpif_netlink_vport *vport)
+{
+    static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(5, 20);
+
+    switch (vport->type) {
+    case OVS_VPORT_TYPE_NETDEV: {
+        const char *type = netdev_get_type_from_name(vport->name);
+
+        return type ? type : "system";
+    }
+
+    case OVS_VPORT_TYPE_INTERNAL:
+        return "internal";
+
+    case OVS_VPORT_TYPE_GENEVE:
+        return "geneve";
+
+    case OVS_VPORT_TYPE_GRE:
+        return "gre";
+
+    case OVS_VPORT_TYPE_VXLAN:
+        return "vxlan";
+
+    case OVS_VPORT_TYPE_LISP:
+        return "lisp";
+
+    case OVS_VPORT_TYPE_STT:
+        return "stt";
+
+    case OVS_VPORT_TYPE_UNSPEC:
+    case __OVS_VPORT_TYPE_MAX:
+        break;
+    }
+
+    VLOG_WARN_RL(&rl, "dp%d: port `%s' has unsupported type %u",
+                 vport->dp_ifindex, vport->name, (unsigned int) vport->type);
+    return "unknown";
+}
+```
+
+可看出，`ovs-vsctl show`时的类型显示在内核中都有对应关系。宏定义如下：
+
+```c
+enum ovs_vport_type {
+	OVS_VPORT_TYPE_UNSPEC,
+	OVS_VPORT_TYPE_NETDEV,   /* network device */
+	OVS_VPORT_TYPE_INTERNAL, /* network device implemented by datapath */
+	OVS_VPORT_TYPE_GRE,      /* GRE tunnel. */
+	OVS_VPORT_TYPE_VXLAN,	 /* VXLAN tunnel. */
+	OVS_VPORT_TYPE_GENEVE,	 /* Geneve tunnel. */
+	OVS_VPORT_TYPE_LISP = 105,  /* LISP tunnel */
+	OVS_VPORT_TYPE_STT = 106, /* STT tunnel */
+	__OVS_VPORT_TYPE_MAX
+};
+```
+
+下面，选取具有代表性的几个类型进行分析。
+
+### system
+
+此类vport（`ovs-dpctl show`未显示类型的接口）是对设备原有接口的封装，内核类型为'OVS_VPORT_TYPE_NETDEV'。定义的vport操作变量为'ovs_netdev_vport_ops'。
+
+```c
+static struct vport_ops ovs_netdev_vport_ops = {
+	.type		= OVS_VPORT_TYPE_NETDEV,
+	.create		= netdev_create,
+	.destroy	= netdev_destroy,
+	.send		= dev_queue_xmit,
+};
+```
+
+此种接口创建内部比较特殊，因此需要特殊强调。在'netdev_create'中有一段如下代码
+
+```c
+static struct vport *netdev_create(const struct vport_parms *parms)
+{
+	struct vport *vport;
+
+	vport = ovs_vport_alloc(0, &ovs_netdev_vport_ops, parms);
+	if (IS_ERR(vport))
+		return vport;
+
+	return ovs_netdev_link(vport, parms->name);
+}
+```
+
+```c
+struct vport *ovs_vport_alloc(int priv_size, const struct vport_ops *ops,
+			  const struct vport_parms *parms)
+{
+	struct vport *vport;
+	size_t alloc_size;
+	/*vport分配空间*/
+	alloc_size = sizeof(struct vport);
+	if (priv_size) {
+		alloc_size = ALIGN(alloc_size, VPORT_ALIGN);
+		alloc_size += priv_size;
+	}
+
+	vport = kzalloc(alloc_size, GFP_KERNEL);
+	if (!vport)
+		return ERR_PTR(-ENOMEM);
+	/*初始化*/
+	vport->dp = parms->dp;
+	vport->port_no = parms->port_no;
+	vport->ops = ops;
+	INIT_HLIST_NODE(&vport->dp_hash_node);
+
+	if (ovs_vport_set_upcall_portids(vport, parms->upcall_portids)) {
+		kfree(vport);
+		return ERR_PTR(-EINVAL);
+	}
+
+	return vport;
+}
+```
+
+```c
+struct vport *ovs_netdev_link(struct vport *vport, const char *name)
+{
+	int err;
+	/*此种类型接口是对系统原有口的映射，因此dev赋值为系统原有接口的dev*/
+	vport->dev = dev_get_by_name(ovs_dp_get_net(vport->dp), name);
+	if (!vport->dev) {
+		err = -ENODEV;
+		goto error_free_vport;
+	}
+	/*系统接口为以下情况是报错退出：
+	- loopback口
+   	- 非ARPHRD_ETHER接口
+    - OVS_VPORT_TYPE_INTERNAL类型接口
+    */
+	if (vport->dev->flags & IFF_LOOPBACK ||
+	    vport->dev->type != ARPHRD_ETHER ||
+	    ovs_is_internal_dev(vport->dev)) {
+		err = -EINVAL;
+		goto error_put;
+	}
+	/*所有system都是datapatch 接口的slave接口；
+	默认只要一个datapath接口(ovs-system)，所有system类型的master都为此接口。
+	*/
+	rtnl_lock();
+	err = netdev_master_upper_dev_link(vport->dev,
+					   get_dpdev(vport->dp), NULL, NULL);
+	if (err)
+		goto error_unlock;
+
+	err = netdev_rx_handler_register(vport->dev, netdev_frame_hook,
+					 vport);
+	if (err)
+		goto error_master_upper_dev_unlink;
+	/*禁用接口的lro功能；*/
+	dev_disable_lro(vport->dev);
+  	/*开启混杂模式*/
+	dev_set_promiscuity(vport->dev, 1);
+  	/*设置接口私有类型*/
+	vport->dev->priv_flags |= IFF_OVS_DATAPATH;
+	rtnl_unlock();
+
+	return vport;
+…………
+…………    
+}
+```
+
+'netdev_rx_handler_register'实现如下
+
+```c
+int netdev_rx_handler_register(struct net_device *dev,
+			       rx_handler_func_t *rx_handler,
+			       void *rx_handler_data)
+{
+	ASSERT_RTNL();
+	if (dev->rx_handler)
+		return -EBUSY;
+	/* Note: rx_handler_data must be set before rx_handler */
+  	/*定义dev收包处理私有数据，即 vport指针，此处完成系统dev到vport的对应。
+  	定义接口收包处理函数。*/
+	rcu_assign_pointer(dev->rx_handler_data, rx_handler_data);
+	rcu_assign_pointer(dev->rx_handler, rx_handler);
+
+	return 0;
+}
+```
+
+此类接口定义了 'rx_handler'，因此，在CPU报文处理函数'__netif_receive_skb_core'中
+
+```c
+……
+rx_handler = rcu_dereference(skb->dev->rx_handler);
+……
+type = skb->protocol;
+	list_for_each_entry_rcu(ptype,
+			&ptype_base[ntohs(type) & PTYPE_HASH_MASK], list) {
+		if (ptype->type == type &&
+		    (ptype->dev == null_or_dev || ptype->dev == skb->dev ||
+		     ptype->dev == orig_dev)) {
+			if (pt_prev)
+				ret = deliver_skb(skb, pt_prev, orig_dev);
+			pt_prev = ptype;
+		}
+	}
+```
+
+也就是说此类接口处理报文在协议栈之前，因此netfilter对此类接口不起作用，所以在云环境（openstack）中，需要在虚拟机tap口与虚拟交换机之间增加Linux bridge设备来使报文经过协议栈（netfilter起作用）来实现security group。
 
 ### internal
 
@@ -99,182 +305,17 @@ static struct vport *internal_dev_create(const struct vport_parms *parms)
 	netif_start_queue(vport->dev);
 
 	return vport;
-
-error_unlock:
-	rtnl_unlock();
-	free_percpu(vport->dev->tstats);
-error_free_netdev:
-	free_netdev(vport->dev);
-error_free_vport:
-	ovs_vport_free(vport);
-error:
-	return ERR_PTR(err);
+…………
+…………    
 }
 ```
-
-### system
-
-此类vport（'ovs-dpctl show'未显示类型的接口）是对设备原有接口的封装，内核类型为'OVS_VPORT_TYPE_NETDEV'。定义的vport操作变量为'ovs_netdev_vport_ops'。
-
-```c
-static struct vport_ops ovs_netdev_vport_ops = {
-	.type		= OVS_VPORT_TYPE_NETDEV,
-	.create		= netdev_create,
-	.destroy	= netdev_destroy,
-	.send		= dev_queue_xmit,
-};
-```
-
-此种接口创建内部比较特殊，因此需要特殊强调。在'netdev_create'中有一段如下代码
-
-```c
-static struct vport *netdev_create(const struct vport_parms *parms)
-{
-	struct vport *vport;
-
-	vport = ovs_vport_alloc(0, &ovs_netdev_vport_ops, parms);
-	if (IS_ERR(vport))
-		return vport;
-
-	return ovs_netdev_link(vport, parms->name);
-}
-```
-```c
-struct vport *ovs_vport_alloc(int priv_size, const struct vport_ops *ops,
-			  const struct vport_parms *parms)
-{
-	struct vport *vport;
-	size_t alloc_size;
-	/*vport分配空间*/
-	alloc_size = sizeof(struct vport);
-	if (priv_size) {
-		alloc_size = ALIGN(alloc_size, VPORT_ALIGN);
-		alloc_size += priv_size;
-	}
-
-	vport = kzalloc(alloc_size, GFP_KERNEL);
-	if (!vport)
-		return ERR_PTR(-ENOMEM);
-	/*初始化*/
-	vport->dp = parms->dp;
-	vport->port_no = parms->port_no;
-	vport->ops = ops;
-	INIT_HLIST_NODE(&vport->dp_hash_node);
-
-	if (ovs_vport_set_upcall_portids(vport, parms->upcall_portids)) {
-		kfree(vport);
-		return ERR_PTR(-EINVAL);
-	}
-
-	return vport;
-}
-```
-
-```c
-struct vport *ovs_netdev_link(struct vport *vport, const char *name)
-{
-	int err;
-	/*此种类型接口是对系统原有口的映射，因此dev赋值为系统原有接口的dev*/
-	vport->dev = dev_get_by_name(ovs_dp_get_net(vport->dp), name);
-	if (!vport->dev) {
-		err = -ENODEV;
-		goto error_free_vport;
-	}
-	/*系统接口为以下情况是报错退出：
-	- loopback口
-   	- 非ARPHRD_ETHER接口
-    - OVS_VPORT_TYPE_INTERNAL类型接口
-    */
-	if (vport->dev->flags & IFF_LOOPBACK ||
-	    vport->dev->type != ARPHRD_ETHER ||
-	    ovs_is_internal_dev(vport->dev)) {
-		err = -EINVAL;
-		goto error_put;
-	}
-	/*所有system都是datapatch 接口的slave接口；
-	默认只要一个datapath接口(ovs-system)，所有system类型的master都为此接口。
-	*/
-	rtnl_lock();
-	err = netdev_master_upper_dev_link(vport->dev,
-					   get_dpdev(vport->dp), NULL, NULL);
-	if (err)
-		goto error_unlock;
-
-	err = netdev_rx_handler_register(vport->dev, netdev_frame_hook,
-					 vport);
-	if (err)
-		goto error_master_upper_dev_unlink;
-	/*禁用接口的lro功能；*/
-	dev_disable_lro(vport->dev);
-  	/*开启混杂模式*/
-	dev_set_promiscuity(vport->dev, 1);
-  	/*设置接口私有类型*/
-	vport->dev->priv_flags |= IFF_OVS_DATAPATH;
-	rtnl_unlock();
-
-	return vport;
-
-error_master_upper_dev_unlink:
-	netdev_upper_dev_unlink(vport->dev, get_dpdev(vport->dp));
-error_unlock:
-	rtnl_unlock();
-error_put:
-	dev_put(vport->dev);
-error_free_vport:
-	ovs_vport_free(vport);
-	return ERR_PTR(err);
-}
-```
-
-'netdev_rx_handler_register'实现如下
-
-```c
-int netdev_rx_handler_register(struct net_device *dev,
-			       rx_handler_func_t *rx_handler,
-			       void *rx_handler_data)
-{
-	ASSERT_RTNL();
-
-	if (dev->rx_handler)
-		return -EBUSY;
-
-	/* Note: rx_handler_data must be set before rx_handler */
-  	/*定义dev收包处理私有数据，即 vport指针，此处完成系统dev到vport的对应。
-  	定义接口收包处理函数。*/
-	rcu_assign_pointer(dev->rx_handler_data, rx_handler_data);
-	rcu_assign_pointer(dev->rx_handler, rx_handler);
-
-	return 0;
-}
-```
-
-此类接口定义了 'rx_handler'，因此，在CPU报文处理函数'__netif_receive_skb_core'中
-
-```c
-……
-rx_handler = rcu_dereference(skb->dev->rx_handler);
-……
-type = skb->protocol;
-	list_for_each_entry_rcu(ptype,
-			&ptype_base[ntohs(type) & PTYPE_HASH_MASK], list) {
-		if (ptype->type == type &&
-		    (ptype->dev == null_or_dev || ptype->dev == skb->dev ||
-		     ptype->dev == orig_dev)) {
-			if (pt_prev)
-				ret = deliver_skb(skb, pt_prev, orig_dev);
-			pt_prev = ptype;
-		}
-	}
-```
-
-也就是说此类接口处理报文在协议栈之前，因此netfilter对此类接口不起作用，所以在云环境（openstack）中，需要在虚拟机tap口与虚拟交换机之间增加Linux bridge设备来使报文经过协议栈（netfilter起作用）来实现security group。
 
 ### vxlan
 
 - 'ovs-vsctl show'显示的type 为'vxlan'类型，此种接口为ovs虚拟接口。
 - 'ovs-dpctl show'显示的type 为'vxlan'类型，此种接口是对系统的封装，可看做系统口。
 
-ovs vxlan创建在文件'vport-vxlan.c'中，定义 操作如下
+内核中对`vxlan`类型的接口定义为`OVS_VPORT_TYPE_VXLAN`。ovs vxlan创建在文件'vport-vxlan.c'中，定义 操作如下
 
 ```c
 static struct vport_ops ovs_vxlan_netdev_vport_ops = {
@@ -304,13 +345,19 @@ static struct vport *vxlan_create(const struct vport_parms *parms)
 }
 ```
 
-'ovs_netdev_link' 函数上面已经分析过，值得注意的是，vxlan类型的接口也收包函数也是 'netdev_frame_hook' 。
+'ovs_netdev_link' 函数上面已经分析过，值得注意的是，vxlan类型的接口收包函数也是 'netdev_frame_hook' 。
 
 基本上系统口都有master，而master为'ovs-system'。
 
 ![系统接口master](/images/OVS数据收发流程解析/系统接口master.png)
 
 对于ovs-system作用，还没搞清楚。
+
+### patch
+
+patch 类型的接口是ovs中比较特殊的类型，其官方定义为“A pair of virtual devices that act as a patch cable”，在系统中运行`man 5 ovs-vswitchd.conf.db`可看到。
+
+patch port类似于Linux系统中的`veth`，总是成对出现，分别连接在两个网桥上，从一个patch port收到的数据包会被转发到另一个patch port。
 
 ## OVS接口报文处理
 
@@ -376,11 +423,11 @@ static struct vport *vxlan_create(const struct vport_parms *parms)
    {
    	struct sw_flow_key key;
    	int error;
-   	/*ovs私有数据*/
+   	/*设置ovs私有数据*/
    	OVS_CB(skb)->input_vport = vport;
    	OVS_CB(skb)->mru = 0;
    	OVS_CB(skb)->cutlen = 0;
-     	/*判断是否属于同一个网络空间*/
+     	/*判断是否属于同一个网络空间；可参考 openstack 网络架构 */
    	if (unlikely(dev_net(skb->dev) != ovs_dp_get_net(vport->dp))) {
    		u32 mark;
 
@@ -389,15 +436,17 @@ static struct vport *vxlan_create(const struct vport_parms *parms)
    		skb->mark = mark;
    		tun_info = NULL;
    	}
-   	/*ovs内部协议号*/
+   	/*初始化ovs内部协议号*/
    	ovs_skb_init_inner_protocol(skb);
    	skb_clear_ovs_gso_cb(skb);
    	/*此函数会解析skb内容，并给key中字段赋值*/
+       /*注意 input_vport->port_no 为`ovs-dpctl show`显示的port number*/
    	error = ovs_flow_key_extract(tun_info, skb, &key);
    	if (unlikely(error)) {
    		kfree_skb(skb);
    		return error;
    	}
+       //内核匹配流表路径，没有则上送。
    	ovs_dp_process_packet(skb, &key);
    	return 0;
    }
@@ -417,8 +466,8 @@ static struct vport *vxlan_create(const struct vport_parms *parms)
    	u32 n_mask_hit;
 
    	stats = this_cpu_ptr(dp->stats_percpu);
-
    	/*根据key找flow表，没有的话进行upcall；
+   	此处找的是内核流表，可用`ovs-dpctl dump-flows [dp]`查看。
    	本文暂不对这些功能函数进行具体分析*/
    	flow = ovs_flow_tbl_lookup_stats(&dp->table, key, skb_get_hash(skb),
    					 &n_mask_hit);
@@ -472,23 +521,58 @@ static struct vport *vxlan_create(const struct vport_parms *parms)
    		err = -ENETDOWN;
    		goto out;
    	}
-
+   	//执行action
    	err = do_execute_actions(dp, skb, key,
    				 acts->actions, acts->actions_len);
-
-   	if (level == 1)
-   		process_deferred_actions(dp);
-
-   out:
-   	__this_cpu_dec(exec_actions_level);
-   	return err;
+       …………
    }
    ```
 
-   在do_execute_actions函数中会根据flow进行处理，如果action是 output的话则调用
-
    ```c
-   do_output(dp, skb, prev_port, key);
+   /* Execute a list of actions against 'skb'. */
+   static int do_execute_actions(struct datapath *dp, struct sk_buff *skb,
+   			      struct sw_flow_key *key,
+   			      const struct nlattr *attr, int len)
+   {
+   	const struct nlattr *a;
+   	int rem;
+
+   	for (a = attr, rem = len; rem > 0;
+   	     a = nla_next(a, &rem)) {
+   		int err = 0;
+   		/*获取action type；nla*定义在内核 netlink.h文件中*/
+   		switch (nla_type(a)) {
+           /*从某接口转发*/
+   		case OVS_ACTION_ATTR_OUTPUT: {
+               //获取 out_port
+   			int port = nla_get_u32(a);
+   			struct sk_buff *clone;
+   			/* 每个输出操作都需要一个单独的'skb'克隆，如果输出操作是最后一个操作，则可以避免克隆。
+   			 */
+   			if (nla_is_last(a, rem)) {
+   				do_output(dp, skb, port, key);
+   				return 0;
+   			}
+
+   			clone = skb_clone(skb, GFP_ATOMIC);
+   			if (clone)
+   				do_output(dp, clone, port, key);
+   			OVS_CB(skb)->cutlen = 0;
+   			break;
+   		}
+   		//其他actions 这里不详细介绍
+           …………
+   		}
+
+   		if (unlikely(err)) {
+   			kfree_skb(skb);
+   			return err;
+   		}
+   	}
+
+   	consume_skb(skb);
+   	return 0;
+   }
    ```
 
 6. do_output
@@ -616,7 +700,7 @@ static int internal_dev_xmit(struct sk_buff *skb, struct net_device *netdev)
 
 ### vxlan接口
 
-vxlan接口的 收包处理(netdev_frame_hook) 和 发包处理(vxlan_xmit)，已经分析过。
+vxlan接口的 收包处理(netdev_frame_hook) 和 发包处理(vxlan_xmit)，在以前的文章已经分析过。
 
 ## 优秀资料
 

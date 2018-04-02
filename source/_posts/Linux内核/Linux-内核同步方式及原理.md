@@ -650,7 +650,7 @@ static inline void __local_bh_disable(unsigned long ip)
 }
 ```
 
-1. "\_\_builtin_return_address" 接收一个称为 `level` 的参数。这个参数定义希望获取返回地址的调用堆栈级别。例如，如果指定 `level` 为 `0`，那么就是请求当前函数的返回地址。如果指定 `level` 为 `1`，那么就是请求进行调用的函数的返回地址，依此类推。使用 "\_\_builtin_return_address"捕捉返回地址，以便在以后进行跟踪时使用这个地址。
+1. "\_\_builtin_return_address" 接收一个称为 `level` 的参数。这个参数定义希望获取返回地址的调用堆栈级别。例如，如果指定 `level` 为 `0`，那么就是请求当前函数的返回地址。如果指定 `level` 为 `1`，那么就是请求进行调用的函数的返回地址，依此类推。使用 `__builtin_return_address`捕捉返回地址，以便在以后进行跟踪时使用这个地址。
 2. preempt_count 加 本地软中断偏移(SOFTIRQ_OFFSET)，之后可用 宏 'softirq_count()' 进行判断是否已禁用软中断。
 
 #### spin_lock_irq

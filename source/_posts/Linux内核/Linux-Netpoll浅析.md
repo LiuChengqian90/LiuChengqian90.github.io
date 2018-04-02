@@ -106,7 +106,7 @@ static int __init netpoll_init(void)
 
 #### 接口结构体初始化
 
-npinfo在函数`\_\_netpoll_setup`中进行分配初始化，查询代码可知仅有vlan、bond和bridge类型的接口注册函数调用`\_\_netpoll_setup`。
+npinfo在函数`__netpoll_setup`中进行分配初始化，查询代码可知仅有vlan、bond和bridge类型的接口注册函数调用`__netpoll_setup`。
 
 ```C
 int __netpoll_setup(struct netpoll *np, struct net_device *ndev, gfp_t gfp)
@@ -182,7 +182,7 @@ out:
 ### 收包-rx
 
 ```c
-static inline int netpoll_receive_skb(struct sk_buff *skb)
+static inline int netpoll_recßeive_skb(struct sk_buff *skb)
 {
     //NAPI部分之前的文章已经写过，不在分析。
     //现在NETPOLL 基本在 NAPI中调用。
@@ -192,7 +192,7 @@ static inline int netpoll_receive_skb(struct sk_buff *skb)
 }
 ```
 
-此函数仅在`\_\_netif_receive_skb_core`开头被调用。
+此函数仅在`__netif_receive_skb_core`开头被调用。
 
 ```c
 static inline bool netpoll_rx_on(struct sk_buff *skb)
