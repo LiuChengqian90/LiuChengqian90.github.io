@@ -52,22 +52,60 @@ make: *** [envdir] Error 1
 
 则编辑src/conf-cc, 加gcc加上`-include /usr/include/errno.h` 使用标准错误即可。
 
-## 使用
+验证安装：
+
+```shell
+# cat /etc/inittab 	//查看是否有svscanboot
+```
+
+## 测试
+
+1. 测试程序
+
+   ```c
+   #include <stdio.h>
+   #include <stdlib.h>
+   int main()
+   {
+           while(1)
+           {
+               printf("in process\n");
+               sleep(1);
+           }
+           return 0;
+   }
+   ```
+
+   将以上代码进行编译
+
+   ```shell
+   # gcc -o test test.c
+   ```
+
+2. 在test目录下编写脚本`run`，并设置可执行权限。启动
+
+   ```shell
+   # cat run
+   !/bin/sh
+   echo "start test!"
+   ./test
+   ```
+
+3. 启动
+
+   ```shell
+   # nohup supervise test/  > /dev/null 2>&1 & //nohup,no hang up
+   ```
+
+4. 检查test运行情况并kill掉，重新检查。
 
 
+   ## 优秀资料
 
+   [supervise系统进程监控](http://lehsyh.iteye.com/blog/745683)
 
+   [Linux操作下的进程管理利器 Supervise](http://www.cnblogs.com/end/archive/2013/04/18/3028036.html)
 
+   [Linux中的守护进程——supervise](http://www.cnblogs.com/zhengbin/p/5977453.html)
 
-
-
-
-## 优秀资料
-
-[supervise系统进程监控](http://lehsyh.iteye.com/blog/745683)
-
-[Linux操作下的进程管理利器 Supervise](http://www.cnblogs.com/end/archive/2013/04/18/3028036.html)
-
-[Linux中的守护进程——supervise](http://www.cnblogs.com/zhengbin/p/5977453.html)
-
-[supervise进程管理利器](https://blog.csdn.net/u012373815/article/details/70217030)
+   [supervise进程管理利器](https://blog.csdn.net/u012373815/article/details/70217030)
