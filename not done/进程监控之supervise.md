@@ -52,8 +52,6 @@ make: *** [envdir] Error 1
 
 则编辑src/conf-cc, 加gcc加上`-include /usr/include/errno.h` 使用标准错误即可。
 
-
-
 ## 使用
 
 
@@ -62,7 +60,9 @@ make: *** [envdir] Error 1
 
 
 
-## 优秀资料：
+
+
+## 优秀资料
 
 [supervise系统进程监控](http://lehsyh.iteye.com/blog/745683)
 
