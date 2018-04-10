@@ -1,9 +1,10 @@
 ---
-title: 进程监控之supervise
+title: 进程监控之daemontools
 date: 2018-04-08 10:24:29
 categories: Linux工具
 tags:
   - supervise
+  - svscan
 ---
 
 ## 简介
@@ -58,7 +59,9 @@ make: *** [envdir] Error 1
 # cat /etc/inittab 	//查看是否有svscanboot
 ```
 
-## 测试
+![initab文件](/images/进程监控之daemontools/initab文件.png)
+
+## supervise
 
 1. 测试程序
 
@@ -86,26 +89,54 @@ make: *** [envdir] Error 1
 
    ```shell
    # cat run
-   !/bin/sh
+   #!/bin/sh
    echo "start test!"
-   ./test
+   exec ./test
    ```
 
 3. 启动
 
    ```shell
+   # supervise test 
+   ```
+
+   查看程序是否正常运行，如果错误信息类似
+
+   ```shell
+   # supervise: fatal: unable to start test/run: exec format error
+   ```
+
+   其原因为 `未在run文件中加入"#!/bin/sh"或格式不对`。
+
+   一般服务器运行的程序会将其挂起，如下
+
+   ```shell
    # nohup supervise test/  > /dev/null 2>&1 & //nohup,no hang up
    ```
 
-4. 检查test运行情况并kill掉，重新检查。
+4. 检查`test`运行情况并kill掉，重新检查。
+
+   ![reboottest](/images/进程监控之daemontools/reboottest.png)
+
+
+
+
+文件详情 （lock、status、svcontrol），
+
+http://wiki.baidu.com/pages/viewpage.action?pageId=333843536
+
+http://wiki.baidu.com/pages/viewpage.action?pageId=106396753
+
+## svscan
+
 
 
    ## 优秀资料
 
-   [supervise系统进程监控](http://lehsyh.iteye.com/blog/745683)
+[supervise进程管理利器](https://blog.csdn.net/u012373815/article/details/70217030)
 
-   [Linux操作下的进程管理利器 Supervise](http://www.cnblogs.com/end/archive/2013/04/18/3028036.html)
+[进程的守护神 - daemontools](http://linbo.github.io/2013/02/24/daemontools)
 
-   [Linux中的守护进程——supervise](http://www.cnblogs.com/zhengbin/p/5977453.html)
+[用Daemontools监控Linux服务](http://naixwf.github.io/2015/07/21/2014-11-19-daemontools/)
 
-   [supervise进程管理利器](https://blog.csdn.net/u012373815/article/details/70217030)
+https://untroubled.org/daemontools-encore/svscan.8.html#toc
