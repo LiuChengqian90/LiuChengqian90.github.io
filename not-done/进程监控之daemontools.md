@@ -63,6 +63,16 @@ make: *** [envdir] Error 1
 
 ## supervise
 
+### 工具原理
+
+supervise启动的时候fork一个子进程,子进程执行execvp系统调用,将自己替换成执行的模块,
+
+模块变成supervise的子进程在运行,而supervise则死循环运行,并通过waitpid或者wait3系统调用选择非阻塞的方式去侦听子进程的运行情况,
+
+当然同时也会读取pipe文件svcontrol的命令,然后根据命令去执行不同的动作,
+
+如果子进程因某种原因导致退出,则supervise通过waitpid或者wait3获知,并继续启动模块,如果模块异常导致无法启动,则会使supervise陷入死循环,不断的启动模块。
+
 1. 测试程序
 
    ```c
@@ -119,13 +129,35 @@ make: *** [envdir] Error 1
    ![reboottest](/images/进程监控之daemontools/reboottest.png)
 
 
+### 使用的文件
 
+supervise会在服务目录下创建supervise目录,同时supervise目录下会有4个文件，分别为`control  lock  ok  status`，对应的功能和我们可以从中获取的信息如下
 
-文件详情 （lock、status、svcontrol），
+- control
 
-http://wiki.baidu.com/pages/viewpage.action?pageId=333843536
+  - 可以理解为一个控制接口，supervise读取这个管道的信息，进而根据管道的信息去控制子进程，而通过控制子进程的方式实际上就是给子进程发信号。
+  - 可以利用的信息：直接写命令到该文件中，如echo 'd' > svcontorl，让supervise去控制子进程，比较常用的命令如下
+    - d: **停掉子进程**，并且不启动。
+    - u: 相对于d，**启动子进程**。
+    - k: 发送一个kill信号，因kill之后supervise马上又**重启**，因此可以认为是一个重启的动作。
+    - x: 标志supervise退出。
 
-http://wiki.baidu.com/pages/viewpage.action?pageId=106396753
+- lock
+
+  - supervise的文件锁，通过该文件锁去控制并发，防止同一个status目录下启动多个进程，造成混乱。
+  - 可以通过/sbin/fuser这个命令去获取lock文件的使用信息，如果fuser返回值为0，表示supervise已经启动,同时fuser返回了**supervise的进程pid**。
+
+- ok
+
+  - 通过此文件判断supervise进程状态。
+
+- status
+
+  - supervise用来记录一些信息之用，可以简单的理解为 char status[20]，其中status[16]记录了supervise所启动的子进程的pid，status[17]-status[19] 是子进程pid别右移8位，而status[0]-status[11] 没有用，status[12]-status[14] 是标志位，一般没啥用,status[15] 直接为0。
+
+  - 可以直接通过od命令去读取该文件,一般有用的就是od -An -j16 -N2 -tu2 status可以直接拿到 supervise所负责的子进程的pid。
+
+    如果用 od -d status 或  od -t u2 status 读取 2 字节，无符号短整型，最大值是 65535。如果 cat /proc/sys/kernel/pid_max 大于这个数。od -d status 读出来的 pid 就有可能是错的。每次右移 8 位，是想把 pid 保存成 4 字节。即从 16 - 19 共 4 个字节。正确的读取应该是 od -t u4 status，按 4 字节无符号整形读取就不会有问题了。
 
 ## svscan
 
