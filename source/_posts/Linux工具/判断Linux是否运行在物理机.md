@@ -126,15 +126,15 @@ lspci 是一个用来显示系统中所有PCI总线设备或连接到该总线�
 1. `lspci` 不加任何选项
 
    ```shell
-   Host bridge:					<==主板芯片
-   VGA compatible controller		 <==显卡
-   Audio device					<==音频设备
-   PCI bridge						<==接口插槽
-   USB Controller					<==USB控制器
+   Host bridge:                      <==主板芯片
+   VGA compatible controller         <==显卡
+   Audio device                      <==音频设备
+   PCI bridge                        <==接口插槽
+   USB Controller                    <==USB控制器
    ISA bridge                                
    IDE interface                            
    SMBus                                       
-   Ethernet controller				<==网卡
+   Ethernet controller               <==网卡
    ```
 
 2. `lspci -tv` 列出所有的pci设备
