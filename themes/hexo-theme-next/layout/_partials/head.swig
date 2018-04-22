@@ -33,7 +33,7 @@
 
 
 {% if theme.google_site_verification %}
-  <meta name="google-site-verification" content="vntw1GeQtekc4bt-eDusePaJ5RbhttUdmo6rcStmAk4" />
+  <meta name="google-site-verification" content="DWqJO5qUvqi4sczcquw0dsonM1i3SQe_Kl171LYmmac" />
 {% endif %}
 
 {% if theme.bing_site_verification %}
