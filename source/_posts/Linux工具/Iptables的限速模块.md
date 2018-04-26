@@ -118,47 +118,46 @@ hashlimit的几个参数如下：
 
 使用hashlimit 来进行限速例子(icmp)： 
 
-- **hashlimit-upto**
+### **hashlimit-upto**
 
-  ```shell
-  # iptables -A OUTPUT -p icmp -m hashlimit --hashlimit-name icmp --hashlimit-upto 5/sec   --hashlimit-burst 10 -j ACCEPT
-  # iptables -A OUTPUT -p icmp -j DROP
-  ```
+```shell
+# iptables -A OUTPUT -p icmp -m hashlimit --hashlimit-name icmp --hashlimit-upto 5/sec   --hashlimit-burst 10 -j ACCEPT
+# iptables -A OUTPUT -p icmp -j DROP
+```
 
-  ![icmp-upto](/images/Iptables的限速模块/icmp-upto.png)
+![icmp-upto](/images/Iptables的限速模块/icmp-upto.png)
 
-  结果如下
+结果如下
 
-  ![icmp-upto-res](/images/Iptables的限速模块/icmp-upto-res.png)
+![icmp-upto-res](/images/Iptables的限速模块/icmp-upto-res.png)
 
-- **hashlimit-above**
+### **hashlimit-above**
 
-  ```shell
-  # iptables -A OUTPUT -p icmp -m hashlimit --hashlimit-name icmp --hashlimit-above 5/sec   --hashlimit-burst 10 -j ACCEPT
-  # iptables -A OUTPUT -p icmp -j DROP
-  ```
+```shell
+# iptables -A OUTPUT -p icmp -m hashlimit --hashlimit-name icmp --hashlimit-above 5/sec   --hashlimit-burst 10 -j ACCEPT
+# iptables -A OUTPUT -p icmp -j DROP
+```
 
-  ![icmp-above](/images/Iptables的限速模块/icmp-above.png)
+![icmp-above](/images/Iptables的限速模块/icmp-above.png)
 
-  结果如下
+结果如下
 
-  ![icmp-above-res-1](/images/Iptables的限速模块/icmp-above-res-1.png)
+![icmp-above-res-1](/images/Iptables的限速模块/icmp-above-res-1.png)
 
-  ![icmp-above-res-2](/images/Iptables的限速模块/icmp-above-res-2.png)
+![icmp-above-res-2](/images/Iptables的限速模块/icmp-above-res-2.png)
 
-  above时，需达到速率才可匹配。
+above时，需达到速率才可匹配。
 
-- **hashlimit-mode**
+### **hashlimit-mode**
 
-  ```shell
-  # iptables -A OUTPUT -p icmp -m hashlimit --hashlimit-name icmp --hashlimit-above 5/sec --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-srcmask 16 -j ACCEPT
-  # iptables -A OUTPUT -p icmp -j DROP
-  ```
+```shell
+# iptables -A OUTPUT -p icmp -m hashlimit --hashlimit-name icmp --hashlimit-above 5/sec --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-srcmask 16 -j ACCEPT
+# iptables -A OUTPUT -p icmp -j DROP
+```
 
-  运行命令 'ping baidu.com -i 0.1' 之后查看文件 '/proc/net/ipt_hashlimit/icmp' 如下
+运行命令 'ping baidu.com -i 0.1' 之后查看文件 '/proc/net/ipt_hashlimit/icmp' 如下
 
-  ![icmp-file](/images/Iptables的限速模块/icmp-file.png)
-
+![icmp-file](/images/Iptables的限速模块/icmp-file.png)
 
 
 说一下`ipt_hashlimit`文件中每列的含义
@@ -172,6 +171,23 @@ hashlimit的几个参数如下：
 | 5          | 成本（即每次规则匹配时减少多少信用）。                       |
 
 如果“信用”达到0，那么哈希条目已超过限制。
+
+### 其他选项
+
+```shell
+# iptables -A OUTPUT -p icmp -m hashlimit --hashlimit-name icmp --hashlimit-upto 5/sec --hashlimit-burst 10 --hashlimit-mode dstip --hashlimit-dstmask 16 --hashlimit-htable-size 1 --hashlimit-htable-max 1  --hashlimit-htable-expire 12000 -j ACCEPT
+# iptables -A OUTPUT -p icmp -j DROP
+```
+
+配置mode为 dstip，hash bucket num为 1 ，最大条目为 1，失效时间为 12 秒（12000 ms），文件如下图（环境有杂包）
+
+![mode-1](/images/Iptables的限速模块/mode-1.png)
+
+运行命令 'ping 8.8.8.8 -i 0.02' ，由于刚开始此表已被占用，必须等到此表老化之后才能连通。
+
+![mode-3](/images/Iptables的限速模块/mode-3.png)
+
+![mode-2](/images/Iptables的限速模块/mode-2.png)
 
 ## 优秀资料
 
