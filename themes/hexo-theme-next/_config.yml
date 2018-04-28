@@ -733,7 +733,7 @@ version: 5.1.3
 # Gitment
 # Introduction: https://imsun.net/posts/gitment-introduction/
 gitment:
-  enable: true
+  enable: false
   githubID: liuchengqian90
   repo: gitment
   ClientID: 65375d4616cbf227418e
