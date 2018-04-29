@@ -33,7 +33,7 @@
 
 
 {% if theme.google_site_verification %}
-  <meta name="google-site-verification" content="DWqJO5qUvqi4sczcquw0dsonM1i3SQe_Kl171LYmmac" />
+  <meta name="google-site-verification" content="{{ theme.google_site_verification }}" />
 {% endif %}
 
 {% if theme.bing_site_verification %}
@@ -46,7 +46,7 @@
 
 
 {% if theme.baidu_site_verification %}
-  <meta name="baidu-site-verification" content="9R660Sr050" />
+  <meta name="baidu-site-verification" content="{{ theme.baidu_site_verification }}" />
 {% endif %}
 
 
