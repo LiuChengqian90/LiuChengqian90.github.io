@@ -16,7 +16,8 @@ timezone: Asia/Shanghai
 url: http://chengqian90.com
 root: /
 #permalink: :year/:month/:day/:title/
-permalink: :year/:title/
+#permalink: :year/:title/
+permalink: :title.html
 permalink_defaults:
 
 # Directory
@@ -105,12 +106,6 @@ jsonContent:
       excerpt: false
       categories: true
       tags: true
-
-search:
-  path: search.xml
-  field: post
-  format: html
-  limit: 10000
 
 # 自动生成sitemap
 sitemap: 
