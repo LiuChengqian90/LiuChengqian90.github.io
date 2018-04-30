@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="DWqJO5qUvqi4sczcquw0dsonM1i3SQe_Kl171LYmmac" />
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="9R660Sr050" />
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.lug.ustc.edu.cn/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="RSS,RPS,RFS,XPS,LSO,TSO,GSO,UFO,LRO,GRO," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="内核代码版本号为 3.10.105。 释义与代码分析RSSRSS(Receive Side Scaling)是一种能够在多处理器系统下使接收报文在多个CPU之间高效分发的网卡驱动技术。  网卡对接收到的报文进行解析，获取IP地址、协议和端口五元组信息。 网卡通过配置的HASH函数根据五元组信息计算出HASH值,也可以根据二、三或四元组进行计算。 取HASH值的低几位(这个具体网卡可能不同)作为R">
+<meta name="keywords" content="RSS,RPS,RFS,XPS,LSO,TSO,GSO,UFO,LRO,GRO">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网络RPS&#x2F;RFS&#x2F;GSO&#x2F;GRO等功能释义">
+<meta property="og:url" content="http://chengqian90.com/网络RPS-RFS-GSO-GRO等功能释义.html">
+<meta property="og:site_name" content="寄存地">
+<meta property="og:description" content="内核代码版本号为 3.10.105。 释义与代码分析RSSRSS(Receive Side Scaling)是一种能够在多处理器系统下使接收报文在多个CPU之间高效分发的网卡驱动技术。  网卡对接收到的报文进行解析，获取IP地址、协议和端口五元组信息。 网卡通过配置的HASH函数根据五元组信息计算出HASH值,也可以根据二、三或四元组进行计算。 取HASH值的低几位(这个具体网卡可能不同)作为R">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://chengqian90.com/images/网络RPS-RFS-GSO-GRO等功能释义/GSO-TSO流程图.png">
+<meta property="og:updated_time" content="2018-04-29T15:31:57.556Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="网络RPS&#x2F;RFS&#x2F;GSO&#x2F;GRO等功能释义">
+<meta name="twitter:description" content="内核代码版本号为 3.10.105。 释义与代码分析RSSRSS(Receive Side Scaling)是一种能够在多处理器系统下使接收报文在多个CPU之间高效分发的网卡驱动技术。  网卡对接收到的报文进行解析，获取IP地址、协议和端口五元组信息。 网卡通过配置的HASH函数根据五元组信息计算出HASH值,也可以根据二、三或四元组进行计算。 取HASH值的低几位(这个具体网卡可能不同)作为R">
+<meta name="twitter:image" content="http://chengqian90.com/images/网络RPS-RFS-GSO-GRO等功能释义/GSO-TSO流程图.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"always","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://chengqian90.com/网络RPS-RFS-GSO-GRO等功能释义.html"/>
+
+
+
+
+
+  <title>网络RPS/RFS/GSO/GRO等功能释义 | 寄存地</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">寄存地</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://chengqian90.com/网络RPS-RFS-GSO-GRO等功能释义.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Chengqian">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/light.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="寄存地">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">网络RPS/RFS/GSO/GRO等功能释义</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-29T16:32:38+08:00">
+                2017-12-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/网络优化/" itemprop="url" rel="index">
+                    <span itemprop="name">网络优化</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/网络RPS-RFS-GSO-GRO等功能释义.html#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count gitment-comments-count" data-xid="/网络RPS-RFS-GSO-GRO等功能释义.html" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/网络RPS-RFS-GSO-GRO等功能释义.html" class="leancloud_visitors" data-flag-title="网络RPS/RFS/GSO/GRO等功能释义">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  5,905
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  27
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p> 内核代码版本号为 3.10.105。</p>
+<h2 id="释义与代码分析"><a href="#释义与代码分析" class="headerlink" title="释义与代码分析"></a>释义与代码分析</h2><h3 id="RSS"><a href="#RSS" class="headerlink" title="RSS"></a>RSS</h3><p>RSS(Receive Side Scaling)是一种能够在多处理器系统下使接收报文在多个CPU之间高效分发的网卡驱动技术。</p>
+<ul>
+<li>网卡对接收到的报文进行解析，获取IP地址、协议和端口五元组信息。</li>
+<li>网卡通过配置的HASH函数根据五元组信息计算出HASH值,也可以根据二、三或四元组进行计算。</li>
+<li>取HASH值的低几位(这个具体网卡可能不同)作为RETA(redirection table)的索引。</li>
+<li>根据RETA中存储的值分发到对应的CPU。</li>
+</ul>
+<p>基于RSS技术程序可以通过硬件在多个CPU之间来分发数据流，并且可以通过对RETA的修改来实现动态的负载均衡。</p>
+<p>RSS需要硬件支持。网卡接收到网络数据包后，要发送一个硬件中断，通知CPU取数据包。默认配置，都是由CPU0去做。</p>
+<p>具体可查看某个driver的函数，例如 ‘drivers/net/ethernet/intel/e1000e/netdev.c’中的函数 ‘e1000e_setup_rss_hash’。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">当CPU可以平行收包时，就会出现不同的核收取了同一个queue的报文，这就会产生报文乱序的问题。</span><br><span class="line">解决方法是将一个queue的中断绑定到唯一的一个核上去，从而避免了乱序问题。</span><br><span class="line">同时如果网络流量大的时候，可以将软中断均匀的分散到各个核上，避免CPU成为瓶颈。</span><br><span class="line"></span><br><span class="line">利用合理的中断绑定脚本 set_irq_affinity.sh(网上很多资源)。</span><br></pre></td></tr></table></figure>
+<p>如果硬件不支持RSS的话，那就可能需要下面的技术。</p>
+<h3 id="RPS"><a href="#RPS" class="headerlink" title="RPS"></a>RPS</h3><p>RPS，即Receive Package Steering，其原理是单纯地以软件方式实现接收的报文在cpu之间平均分配，即利用报文的hash值找到匹配的cpu，然后将报文送至该cpu对应的backlog队列中进行下一步的处理。于 kernel 2.6.35 添加此特性。</p>
+<p>报文hash值，可以是由网卡计算得到，也可以是由软件计算得到，具体的计算也因报文协议不同而有所差异，以tcp报文为例，tcp报文的hash值是根据四元组信息，即源ip、源端口、目的ip和目的端口进行hash计算得到的。</p>
+<p>Linux通过配置文件的方式指定哪些cpu核参与到报文的分发处理，配置文件存放的路径是：’/sys/class/net/(dev)/queues/rx-(n)/rps_cpus’。例如：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 1010101</span><br><span class="line"><span class="meta">#</span> echo 85 &gt; /sys/class/net/eth0/queues/rx-0/rps_cpus</span><br></pre></td></tr></table></figure>
+<p>当设置好该配置文件之后，内核就会去获取该配置文件的内容，然后根据解析的结果生成一个用于参与报文分发处理的cpu列表（实际实现是一个柔性数组），这样当收到报文之后，就可以建立起hash-cpu的映射关系了。</p>
+<p>内核接口结构体中存在如下代码(仅列出重要部分)：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">net_device</span> &#123;</span></span><br><span class="line">……</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> CONFIG_RPS</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">netdev_rx_queue</span>	*_<span class="title">rx</span>;</span></span><br><span class="line">	<span class="comment">/* Number of RX queues allocated at register_netdev() time */</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">int</span>		num_rx_queues;</span><br><span class="line">	<span class="comment">/* Number of RX queues currently active in device */</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">int</span>		real_num_rx_queues;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">……</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>结构’struct netdev_rx_queue’即为RPS的主要结构体，其定义如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">rps_map</span> &#123;</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">int</span> len;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rcu_head</span> <span class="title">rcu</span>;</span></span><br><span class="line">	u16 cpus[<span class="number">0</span>];	<span class="comment">//弹性数组，记录配置文件中配置的参与报文分发处理的cpu id</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> RPS_MAP_SIZE(_num) (sizeof(struct rps_map) + ((_num) * sizeof(u16)))</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">netdev_rx_queue</span> &#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rps_map</span> __<span class="title">rcu</span>		*<span class="title">rps_map</span>;</span></span><br><span class="line">  	<span class="comment">/*设备流表*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rps_dev_flow_table</span> __<span class="title">rcu</span>	*<span class="title">rps_flow_table</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">kobject</span>			<span class="title">kobj</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">net_device</span>		*<span class="title">dev</span>;</span></span><br><span class="line">&#125; ____cacheline_aligned_in_smp;</span><br></pre></td></tr></table></figure>
+<p>如何进行存放？注册接口函数’register_netdevice’中会调用’netdev_register_kobject’，在此函数中设置内核文件相关配置，之后调用的函数如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">netdev_register_kobject -&gt;</span><br><span class="line">  register_queue_kobjects -&gt;</span><br><span class="line">  net_rx_queue_update_kobjects -&gt;</span><br><span class="line">  rx_queue_add_kobject -&gt; </span><br><span class="line">  kobject_init_and_add -&gt;</span><br><span class="line">  error = kobject_init_and_add(kobj, &amp;rx_queue_ktype, <span class="literal">NULL</span>,</span><br><span class="line">	    <span class="string">"rx-%u"</span>, index);</span><br></pre></td></tr></table></figure>
+<p>rx_queue_ktype 定义如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">kobj_type</span> <span class="title">rx_queue_ktype</span> = &#123;</span></span><br><span class="line">	.sysfs_ops = &amp;rx_queue_sysfs_ops,</span><br><span class="line">	.release = rx_queue_release,</span><br><span class="line">	.default_attrs = rx_queue_default_attrs,	<span class="comment">// 接口默认属性</span></span><br><span class="line">&#125;;</span><br><span class="line">--&gt;&gt;</span><br><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">attribute</span> *<span class="title">rx_queue_default_attrs</span>[] = &#123;</span></span><br><span class="line">	&amp;rps_cpus_attribute.attr,</span><br><span class="line">	&amp;rps_dev_flow_table_cnt_attribute.attr,</span><br><span class="line">	<span class="literal">NULL</span></span><br><span class="line">&#125;;</span><br><span class="line">--&gt;&gt;</span><br><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">rx_queue_attribute</span> <span class="title">rps_cpus_attribute</span> =</span></span><br><span class="line"><span class="class">	__<span class="title">ATTR</span>(<span class="title">rps_cpus</span>, <span class="title">S_IRUGO</span> | <span class="title">S_IWUSR</span>, <span class="title">show_rps_map</span>, <span class="title">store_rps_map</span>);</span></span><br></pre></td></tr></table></figure>
+<p>因此，函数 rps_cpus的读方法为’show_rps_map’，写方法为’store_rps_map’。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*仅列出主要部分，详细函数请查看源码*/</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> ssize_t <span class="title">store_rps_map</span><span class="params">(struct netdev_rx_queue *<span class="built_in">queue</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">		      struct rx_queue_attribute *attribute,</span></span></span><br><span class="line"><span class="function"><span class="params">		      <span class="keyword">const</span> <span class="keyword">char</span> *buf, <span class="keyword">size_t</span> len)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  	……</span><br><span class="line">  	<span class="built_in">map</span> = kzalloc(<span class="keyword">max_t</span>(<span class="keyword">unsigned</span> <span class="keyword">int</span>,</span><br><span class="line">	    RPS_MAP_SIZE(cpumask_weight(mask)), L1_CACHE_BYTES),</span><br><span class="line">	    GFP_KERNEL);</span><br><span class="line">	<span class="keyword">if</span> (!<span class="built_in">map</span>) &#123;</span><br><span class="line">		free_cpumask_var(mask);</span><br><span class="line">		<span class="keyword">return</span> -ENOMEM;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	i = <span class="number">0</span>;</span><br><span class="line">  	<span class="comment">/*mask为配置的cpu bit,cpu为临时变量，cpu_online_mask为所有的cpu*/</span></span><br><span class="line">	for_each_cpu_and(cpu, mask, cpu_online_mask)</span><br><span class="line">		<span class="built_in">map</span>-&gt;cpus[i++] = cpu;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (i)</span><br><span class="line">		<span class="built_in">map</span>-&gt;len = i;</span><br><span class="line">	<span class="keyword">else</span> &#123;</span><br><span class="line">		kfree(<span class="built_in">map</span>);</span><br><span class="line">		<span class="built_in">map</span> = <span class="literal">NULL</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	spin_lock(&amp;rps_map_lock);</span><br><span class="line">	old_map = rcu_dereference_protected(<span class="built_in">queue</span>-&gt;rps_map,</span><br><span class="line">					    lockdep_is_held(&amp;rps_map_lock));</span><br><span class="line">	rcu_assign_pointer(<span class="built_in">queue</span>-&gt;rps_map, <span class="built_in">map</span>);</span><br><span class="line">	spin_unlock(&amp;rps_map_lock);</span><br><span class="line">……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>配置已完成，其使用如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">netif_rx</span><span class="params">(struct sk_buff *skb)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	……</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> CONFIG_RPS</span></span><br><span class="line">	<span class="keyword">if</span> (static_key_false(&amp;rps_needed)) &#123;</span><br><span class="line">		<span class="class"><span class="keyword">struct</span> <span class="title">rps_dev_flow</span> <span class="title">voidflow</span>, *<span class="title">rflow</span> = &amp;<span class="title">voidflow</span>;</span></span><br><span class="line">		<span class="keyword">int</span> cpu;</span><br><span class="line"></span><br><span class="line">		preempt_disable();</span><br><span class="line">		rcu_read_lock();</span><br><span class="line">		<span class="comment">/*获取dev的cpu，算法可进入函数查看，其中调用skb_get_rxhash 得到 skb的 rxhash*/</span></span><br><span class="line">		cpu = get_rps_cpu(skb-&gt;dev, skb, &amp;rflow);</span><br><span class="line">		<span class="keyword">if</span> (cpu &lt; <span class="number">0</span>)</span><br><span class="line">			cpu = smp_processor_id();</span><br><span class="line">      </span><br><span class="line">		ret = enqueue_to_backlog(skb, cpu, &amp;rflow-&gt;last_qtail);</span><br><span class="line">		rcu_read_unlock();</span><br><span class="line">		preempt_enable();</span><br><span class="line">	&#125; <span class="keyword">else</span></span><br><span class="line">#endif</span><br><span class="line">……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>RPS是接收报文的时候处理，而XPS是发送报文的时候处理器优化。</p>
+<h3 id="XPS"><a href="#XPS" class="headerlink" title="XPS"></a>XPS</h3><p>XPS，全称为Transmit Packet Steering，是软件支持的发包时的多队列，于 kernel 2.6.38 添加此特性。</p>
+<p>通常 RPS 和 XPS 同id的队列选择的CPU相同，这也是防止不同CPU切换时性能消耗。</p>
+<p>Linux通过配置文件的方式指定哪些cpu核参与到报文的分发处理，配置文件存放的路径是：’/sys/class/net/(dev)/queues/tx-(n)/rps_cpus’。例如：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 1010101</span><br><span class="line"><span class="meta">#</span> echo 85 &gt; /sys/class/net/eth0/queues/rx-0/xps_cpus</span><br></pre></td></tr></table></figure>
+<p>内核中有关xps最主要的函数就是 ‘get_xps_queue’ (关于配置如何映射到内核可参考RPS)。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">u16 __netdev_pick_tx(struct net_device *dev, struct sk_buff *skb)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sock</span> *<span class="title">sk</span> = <span class="title">skb</span>-&gt;<span class="title">sk</span>;</span></span><br><span class="line">	<span class="keyword">int</span> queue_index = sk_tx_queue_get(sk);</span><br><span class="line">	<span class="comment">/*发送队列的index不合法 或者 </span></span><br><span class="line"><span class="comment">	ooo_okay 不为0时重新获取发送队列</span></span><br><span class="line"><span class="comment">	*/</span></span><br><span class="line">  	<span class="comment">/*ooo是 out of order，</span></span><br><span class="line"><span class="comment">  	ooo_okay 标志表示流中没有未完成的数据包，所以发送队列可以改变而没有产生乱序数据包的风险。</span></span><br><span class="line"><span class="comment">    传输层负责适当地设置ooo_okay。 例如，TCP在连接的所有数据已被确认时设置标志。</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">	<span class="keyword">if</span> (queue_index &lt; <span class="number">0</span> || skb-&gt;ooo_okay ||</span><br><span class="line">	    queue_index &gt;= dev-&gt;real_num_tx_queues) &#123;</span><br><span class="line">		<span class="keyword">int</span> new_index = get_xps_queue(dev, skb);</span><br><span class="line">		<span class="keyword">if</span> (new_index &lt; <span class="number">0</span>)</span><br><span class="line">			new_index = skb_tx_hash(dev, skb);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (queue_index != new_index &amp;&amp; sk &amp;&amp;</span><br><span class="line">		    rcu_access_pointer(sk-&gt;sk_dst_cache))</span><br><span class="line">			sk_tx_queue_set(sk, new_index);</span><br><span class="line"></span><br><span class="line">		queue_index = new_index;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> queue_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="RFS"><a href="#RFS" class="headerlink" title="RFS"></a>RFS</h3><p>RPS只是根据报文的hash值从分发处理报文的cpu列表中选取一个目标cpu，这样虽然负载均衡的效果很好，但是当<strong>用户态</strong>处理报文的cpu和内核处理报文软中断的cpu不同的时候，就会导致cpu的缓存不命中，影响性能。而RFS(Receive Flow Steering)就是用来处理这种情况的，RFS的目标是通过指派处理报文的应用程序所在的cpu来在内核态处理报文，以此来增加cpu的<strong>缓存命中率</strong>。所以RFS相比于RPS，主要差别就是在选取分发处理报文的目标cpu上，而<strong>RFS还需要依靠RPS提供的机制进行报文的后续处理</strong>。于 kernel 2.6.35 添加此特性。<br>　　RFS实现指派处理报文的应用程序所在的cpu来在内核态处理报文这一目标主要是依靠两个流表来实现的，其中一个是设备流表，记录的是上次在内核态处理该流中报文的cpu；另外一个是全局的socket流表，记录的是流中的报文渴望被处理的目标cpu。</p>
+<h4 id="设备流表"><a href="#设备流表" class="headerlink" title="设备流表"></a>设备流表</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">netdev_rx_queue</span> &#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rps_map</span> __<span class="title">rcu</span>		*<span class="title">rps_map</span>;</span></span><br><span class="line">  	<span class="comment">/*设备流表*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rps_dev_flow_table</span> __<span class="title">rcu</span>	*<span class="title">rps_flow_table</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">kobject</span>			<span class="title">kobj</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">net_device</span>		*<span class="title">dev</span>;</span></span><br><span class="line">&#125; ____cacheline_aligned_in_smp;</span><br><span class="line">--&gt;&gt;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">rps_dev_flow_table</span> &#123;</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">int</span> mask;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rcu_head</span> <span class="title">rcu</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rps_dev_flow</span> <span class="title">flows</span>[0];</span>	<span class="comment">//弹性数组</span></span><br><span class="line">&#125;;</span><br><span class="line">--&gt;&gt;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">rps_dev_flow</span> &#123;</span></span><br><span class="line">	u16 cpu;	<span class="comment">/* 处理该流的cpu */</span></span><br><span class="line">	u16 filter;</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">int</span> last_qtail;	<span class="comment">/* sd-&gt;input_pkt_queue队列的尾部索引，即该队列长度 */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>‘struct rps_dev_flow’类型弹性数组大小由配置文件’ /sys/class/net/(dev)/queues/rx-(n)/rps_flow_cnt’进行指定的。指定方式可参考RPS一节。</p>
+<h4 id="全局socket流表"><a href="#全局socket流表" class="headerlink" title="全局socket流表"></a>全局socket流表</h4><p>rps_sock_flow_table是一个全局的数据流表，这个表中包含了数据流渴望被处理的CPU。这个CPU是当前处理流中报文的应用程序所在的CPU。全局socket流表会在调recvmsg，sendmsg (特别是inet_accept(), inet_recvmsg(), inet_sendmsg(), inet_sendpage() and tcp_splice_read())，被设置或者更新。<br>全局socket流表rps_sock_flow_table的定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">rps_sock_flow_table</span> &#123;</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">int</span> mask;</span><br><span class="line">	u16 ents[<span class="number">0</span>];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>mask成员存放的就是ents这个柔性数组的大小，该值也是通过配置文件的方式指定的，相关的配置文件为 ‘/proc/sys/net/core/rps_sock_flow_entries’。</p>
+<p>全局socket流表会在调用recvmsg()等函数时被更新，而在这些函数中是通过调用函数sock_rps_record_flow()来更新或者记录流表项信息的，而sock_rps_record_flow()中最终又是调用函数rps_record_sock_flow()来更新ents柔性数组的，该函数实现如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">rps_record_sock_flow</span><span class="params">(struct rps_sock_flow_table *table,</span></span></span><br><span class="line"><span class="function"><span class="params">					u32 hash)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (table &amp;&amp; hash) &#123;</span><br><span class="line">		<span class="keyword">unsigned</span> <span class="keyword">int</span> cpu, index = hash &amp; table-&gt;mask;</span><br><span class="line"></span><br><span class="line">		<span class="comment">/* We only give a hint, preemption can change cpu under us */</span></span><br><span class="line">      	<span class="comment">/*当前CPU*/</span></span><br><span class="line">		cpu = raw_smp_processor_id();</span><br><span class="line">		<span class="comment">/*ents存放当前cpu*/</span></span><br><span class="line">		<span class="keyword">if</span> (table-&gt;ents[index] != cpu)</span><br><span class="line">			table-&gt;ents[index] = cpu;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>此时，再次分析函数 get_rps_cpu：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">get_rps_cpu</span><span class="params">(struct net_device *dev, struct sk_buff *skb,</span></span></span><br><span class="line"><span class="function"><span class="params">		       struct rps_dev_flow **rflowp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">netdev_rx_queue</span> *<span class="title">rxqueue</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rps_map</span> *<span class="title">map</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rps_dev_flow_table</span> *<span class="title">flow_table</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rps_sock_flow_table</span> *<span class="title">sock_flow_table</span>;</span></span><br><span class="line">	<span class="keyword">int</span> cpu = <span class="number">-1</span>;</span><br><span class="line">	u16 tcpu;</span><br><span class="line">	<span class="comment">/*queue_mapping 表示是哪个 queue发送的skb，0为默认*/</span></span><br><span class="line">	<span class="keyword">if</span> (skb_rx_queue_recorded(skb)) &#123;</span><br><span class="line">		u16 index = skb_get_rx_queue(skb);</span><br><span class="line">		<span class="keyword">if</span> (unlikely(index &gt;= dev-&gt;real_num_rx_queues)) &#123;</span><br><span class="line">			WARN_ONCE(dev-&gt;real_num_rx_queues &gt; <span class="number">1</span>,</span><br><span class="line">				  <span class="string">"%s received packet on queue %u, but number "</span></span><br><span class="line">				  <span class="string">"of RX queues is %u\n"</span>,</span><br><span class="line">				  dev-&gt;name, index, dev-&gt;real_num_rx_queues);</span><br><span class="line">			<span class="keyword">goto</span> done;</span><br><span class="line">		&#125;</span><br><span class="line">      	<span class="comment">/*找到对应的RPS收包队列指针*/</span></span><br><span class="line">		rxqueue = dev-&gt;_rx + index;</span><br><span class="line">	&#125; <span class="keyword">else</span></span><br><span class="line">		rxqueue = dev-&gt;_rx;</span><br><span class="line">	</span><br><span class="line">  	<span class="comment">/*没有配置 map 并且也没有 flow table,直接退出；</span></span><br><span class="line"><span class="comment">  	map只有一个CPU且此CPU在线，则目标CPU即是此CPU*/</span></span><br><span class="line">	<span class="built_in">map</span> = rcu_dereference(rxqueue-&gt;rps_map);</span><br><span class="line">	<span class="keyword">if</span> (<span class="built_in">map</span>) &#123;</span><br><span class="line">		<span class="keyword">if</span> (<span class="built_in">map</span>-&gt;len == <span class="number">1</span> &amp;&amp;</span><br><span class="line">		    !rcu_access_pointer(rxqueue-&gt;rps_flow_table)) &#123;</span><br><span class="line">			tcpu = <span class="built_in">map</span>-&gt;cpus[<span class="number">0</span>];</span><br><span class="line">			<span class="keyword">if</span> (cpu_online(tcpu))</span><br><span class="line">				cpu = tcpu;</span><br><span class="line">			<span class="keyword">goto</span> done;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (!rcu_access_pointer(rxqueue-&gt;rps_flow_table)) &#123;</span><br><span class="line">		<span class="keyword">goto</span> done;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">/*获取 skb-&gt;rxhash*/</span></span><br><span class="line">	skb_reset_network_header(skb);</span><br><span class="line">	<span class="keyword">if</span> (!skb_get_rxhash(skb))</span><br><span class="line">		<span class="keyword">goto</span> done;</span><br><span class="line"></span><br><span class="line">	flow_table = rcu_dereference(rxqueue-&gt;rps_flow_table);</span><br><span class="line">	sock_flow_table = rcu_dereference(rps_sock_flow_table);</span><br><span class="line">	<span class="keyword">if</span> (flow_table &amp;&amp; sock_flow_table) &#123;</span><br><span class="line">		u16 next_cpu;</span><br><span class="line">		<span class="class"><span class="keyword">struct</span> <span class="title">rps_dev_flow</span> *<span class="title">rflow</span>;</span></span><br><span class="line">		<span class="comment">/*此条流希望所在的CPU*/</span></span><br><span class="line">		rflow = &amp;flow_table-&gt;flows[skb-&gt;rxhash &amp; flow_table-&gt;mask];</span><br><span class="line">		tcpu = rflow-&gt;cpu;</span><br><span class="line">		<span class="comment">/*上次处理报文所在流的cpu*/</span></span><br><span class="line">		next_cpu = sock_flow_table-&gt;ents[skb-&gt;rxhash &amp;</span><br><span class="line">		    sock_flow_table-&gt;mask];</span><br><span class="line"></span><br><span class="line">		<span class="comment">/*</span></span><br><span class="line"><span class="comment">		 两个cpu不一样时，在一下情况下进行切换：</span></span><br><span class="line"><span class="comment">		 - 当前CPU未设置(RPS_NO_CPU)</span></span><br><span class="line"><span class="comment">		 - 当前CPU处于脱机状态</span></span><br><span class="line"><span class="comment">		 - 当前CPU处理的数据包超出了最后一个使用这个表项入队的数据包。</span></span><br><span class="line"><span class="comment">		   这保证了流的所有以前的数据包已经被出队，从而保持了交付的顺序，不会乱序。</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">		<span class="keyword">if</span> (unlikely(tcpu != next_cpu) &amp;&amp;</span><br><span class="line">		    (tcpu == RPS_NO_CPU || !cpu_online(tcpu) ||</span><br><span class="line">		     ((<span class="keyword">int</span>)(per_cpu(softnet_data, tcpu).input_queue_head -</span><br><span class="line">		      rflow-&gt;last_qtail)) &gt;= <span class="number">0</span>)) &#123;</span><br><span class="line">			tcpu = next_cpu;</span><br><span class="line">          	<span class="comment">/*更改rflow CPU*/</span></span><br><span class="line">			rflow = set_rps_cpu(dev, skb, rflow, next_cpu);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (tcpu != RPS_NO_CPU &amp;&amp; cpu_online(tcpu)) &#123;</span><br><span class="line">			*rflowp = rflow;</span><br><span class="line">			cpu = tcpu;</span><br><span class="line">			<span class="keyword">goto</span> done;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (<span class="built_in">map</span>) &#123;</span><br><span class="line">		tcpu = <span class="built_in">map</span>-&gt;cpus[((u64) skb-&gt;rxhash * <span class="built_in">map</span>-&gt;len) &gt;&gt; <span class="number">32</span>];</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (cpu_online(tcpu)) &#123;</span><br><span class="line">			cpu = tcpu;</span><br><span class="line">			<span class="keyword">goto</span> done;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">done:</span><br><span class="line">	<span class="keyword">return</span> cpu;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="LSO、TSO-和-GSO"><a href="#LSO、TSO-和-GSO" class="headerlink" title="LSO、TSO 和 GSO"></a>LSO、TSO 和 GSO</h3><p>计算机网络上传输的数据基本单位是离散的网包，既然是网包，就有大小限制，这个限制就是 MTU（Maximum Transmission Unit）的大小，一般是1500字节。比如我们想发送很多数据出去，经过os协议栈的时候，会自动帮你拆分成几个不超过MTU的网包。然而，这个拆分是比较费计算资源的（比如很多时候还要计算分别的checksum），由 CPU 来做的话，往往会造成使用率过高。那可不可以把这些简单重复的操作 offload 到网卡上呢？</p>
+<p>于是就有了 <strong>LSO</strong>(Large Segment Offload )，在发送数据超过 MTU 限制的时候（太容易发生了），OS 只需要提交一次传输请求给网卡，网卡会自动的把数据拿过来，然后进行切，并封包发出，发出的网包不超过 MTU 限制。</p>
+<p>而且现在基本上用不到 LSO，已经有更好的替代。</p>
+<p><strong>TSO</strong>(TCP Segmentation Offload): 是一种利用网卡来对大数据包进行自动分段，降低CPU负载的技术。 其主要是延迟分段。</p>
+<p><strong>GSO</strong>(Generic Segmentation Offload): GSO是协议栈是否推迟分段，在发送到网卡之前判断网卡是否支持TSO，如果网卡支持TSO则让网卡分段，否则协议栈分完段再交给驱动。 <strong>如果TSO开启，GSO会自动开启。</strong></p>
+<p>以下是TSO和GSO的组合关系：</p>
+<ul>
+<li>GSO开启， TSO开启：协议栈推迟分段，并直接传递大数据包到网卡，让网卡自动分段。</li>
+<li>GSO开启， TSO关闭：协议栈推迟分段，在最后发送到网卡前才执行分段。</li>
+<li>GSO关闭， TSO开启：同GSO开启， TSO开启。</li>
+<li>GSO关闭， TSO关闭：不推迟分段，在tcp_sendmsg中直接发送MSS大小的数据包。</li>
+</ul>
+<h4 id="开启GSO-TSO"><a href="#开启GSO-TSO" class="headerlink" title="开启GSO/TSO"></a>开启GSO/TSO</h4><p>驱动程序在注册网卡设备的时候默认开启GSO: NETIF_F_GSO。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">register_netdevice</span><span class="params">(struct net_device *dev)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">……</span><br><span class="line">  	<span class="comment">/*</span></span><br><span class="line"><span class="comment">  	#define NETIF_F_SOFT_FEATURES	(NETIF_F_GSO | NETIF_F_GRO)</span></span><br><span class="line"><span class="comment">  	*/</span></span><br><span class="line">	dev-&gt;hw_features |= NETIF_F_SOFT_FEATURES;</span><br><span class="line">	dev-&gt;features |= NETIF_F_SOFT_FEATURES;</span><br><span class="line">	dev-&gt;wanted_features = dev-&gt;features &amp; dev-&gt;hw_features;</span><br><span class="line">……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>驱动程序会根据网卡硬件是否支持来设置TSO: NETIF_F_TSO。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// intel e1000 网卡</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">e1000_probe</span><span class="params">(struct pci_dev *pdev, <span class="keyword">const</span> struct pci_device_id *ent)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  ……</span><br><span class="line">  <span class="keyword">if</span> ((hw-&gt;mac_type &gt;= e1000_82544) &amp;&amp;</span><br><span class="line">	   (hw-&gt;mac_type != e1000_82547))</span><br><span class="line">		netdev-&gt;hw_features |= NETIF_F_TSO;</span><br><span class="line">  ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="是否推迟分段"><a href="#是否推迟分段" class="headerlink" title="是否推迟分段"></a>是否推迟分段</h4><p>GSO/TSO是否开启是保存在dev-&gt;features中，而设备和路由关联，当我们查询到路由后就可以把配置保存在sock中。</p>
+<p>比如在tcp_v4_connect和tcp_v4_syn_recv_sock都会调用sk_setup_caps来设置GSO/TSO配置。</p>
+<p>需要注意的是，只要开启了GSO，即使硬件不支持TSO，也会设置NETIF_F_TSO，使得sk_can_gso(sk)在GSO开启或者TSO开启的时候都返回true。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/* This will initiate an outgoing connection. */</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">tcp_v4_connect</span><span class="params">(struct sock *sk, struct sockaddr *uaddr, <span class="keyword">int</span> addr_len)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  ……</span><br><span class="line">	<span class="comment">/* OK, now commit destination to socket.  */</span></span><br><span class="line">	sk-&gt;sk_gso_type = SKB_GSO_TCPV4;</span><br><span class="line">	sk_setup_caps(sk, &amp;rt-&gt;dst);</span><br><span class="line">  ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="sk-setup-caps"><a href="#sk-setup-caps" class="headerlink" title="sk_setup_caps"></a>sk_setup_caps</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">sk_setup_caps</span><span class="params">(struct sock *sk, struct dst_entry *dst)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	__sk_dst_set(sk, dst);</span><br><span class="line">	sk-&gt;sk_route_caps = dst-&gt;dev-&gt;features;</span><br><span class="line">	<span class="keyword">if</span> (sk-&gt;sk_route_caps &amp; NETIF_F_GSO)</span><br><span class="line">		sk-&gt;sk_route_caps |= NETIF_F_GSO_SOFTWARE;</span><br><span class="line">	sk-&gt;sk_route_caps &amp;= ~sk-&gt;sk_route_nocaps;</span><br><span class="line">	<span class="keyword">if</span> (sk_can_gso(sk)) &#123;</span><br><span class="line">		<span class="keyword">if</span> (dst-&gt;header_len) &#123;</span><br><span class="line">			sk-&gt;sk_route_caps &amp;= ~NETIF_F_GSO_MASK;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			sk-&gt;sk_route_caps |= NETIF_F_SG | NETIF_F_HW_CSUM;</span><br><span class="line">			sk-&gt;sk_gso_max_size = dst-&gt;dev-&gt;gso_max_size;</span><br><span class="line">			sk-&gt;sk_gso_max_segs = dst-&gt;dev-&gt;gso_max_segs;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面可以看出，如果设备开启了GSO，sock都会将TSO标志打开，但是注意这和硬件是否开启TSO无关，硬件的TSO取决于硬件自身特性的支持。</p>
+<h5 id="sk-can-gso"><a href="#sk-can-gso" class="headerlink" title="sk_can_gso"></a>sk_can_gso</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">sk_can_gso</span><span class="params">(<span class="keyword">const</span> struct sock *sk)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  	<span class="comment">/*对于tcp，在tcp_v4_connect中被设置：sk-&gt;sk_gso_type = SKB_GSO_TCPV4*/</span></span><br><span class="line">	<span class="keyword">return</span> net_gso_ok(sk-&gt;sk_route_caps, sk-&gt;sk_gso_type);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="net-gso-ok"><a href="#net-gso-ok" class="headerlink" title="net_gso_ok"></a>net_gso_ok</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">net_gso_ok</span><span class="params">(<span class="keyword">netdev_features_t</span> features, <span class="keyword">int</span> gso_type)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">netdev_features_t</span> feature = gso_type &lt;&lt; NETIF_F_GSO_SHIFT;</span><br><span class="line">  	……</span><br><span class="line">	<span class="keyword">return</span> (features &amp; feature) == feature;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由于tcp 在sk_setup_caps中sk-&gt;sk_route_caps也被设置有SKB_GSO_TCPV4，所以整个sk_can_gso成立。</p>
+<h4 id="GSO的数据包长度"><a href="#GSO的数据包长度" class="headerlink" title="GSO的数据包长度"></a>GSO的数据包长度</h4><p>对紧急数据包或GSO/TSO都不开启的情况，才不会推迟发送， 默认使用当前MSS。开启GSO后，tcp_send_mss返回mss和单个skb的GSO大小，为mss的整数倍。</p>
+<h5 id="tcp-send-mss"><a href="#tcp-send-mss" class="headerlink" title="tcp_send_mss"></a>tcp_send_mss</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">tcp_send_mss</span><span class="params">(struct sock *sk, <span class="keyword">int</span> *size_goal, <span class="keyword">int</span> flags)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> mss_now;</span><br><span class="line">	<span class="comment">/*通过ip option，SACKs及pmtu确定当前的mss*/</span></span><br><span class="line">	mss_now = tcp_current_mss(sk);</span><br><span class="line">  	<span class="comment">/*tcp_xmit_size_goal获取发送数据报到达网络设备时数据段的最大长度，该长度用来分割数据，TCP发送报文时，	   *每个SKB的大小不能超过该值。</span></span><br><span class="line"><span class="comment">	 *在此传入是否标识MSG_OOB(out-of-band,比普通数据更高的优先级传送的带外数据)位，这是因为MSG_OOB是判断  		*是否支持GSO的条件之一，而紧急数据不支持GSO。</span></span><br><span class="line"><span class="comment">	 *在不支持GSO的情况下，size_goal就等于mss_now，而如果支持GSO，则size_goal会是MSS的整数倍。数据报发送	 *到网络设备后再由网络设备根据MSS进行分割。*/</span></span><br><span class="line">	*size_goal = tcp_xmit_size_goal(sk, mss_now, !(flags &amp; MSG_OOB));</span><br><span class="line">	<span class="keyword">return</span> mss_now;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="tcp-xmit-size-goal"><a href="#tcp-xmit-size-goal" class="headerlink" title="tcp_xmit_size_goal"></a>tcp_xmit_size_goal</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">unsigned</span> <span class="keyword">int</span> <span class="title">tcp_xmit_size_goal</span><span class="params">(struct sock *sk, u32 mss_now,</span></span></span><br><span class="line"><span class="function"><span class="params">				       <span class="keyword">int</span> large_allowed)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">tcp_sock</span> *<span class="title">tp</span> = <span class="title">tcp_sk</span>(<span class="title">sk</span>);</span></span><br><span class="line">	u32 xmit_size_goal, old_size_goal;</span><br><span class="line"></span><br><span class="line">	xmit_size_goal = mss_now;</span><br><span class="line">	<span class="comment">/*这里large_allowed表示是否是紧急数据；</span></span><br><span class="line"><span class="comment">	large_allowed为真表示无带外数据，可以大包发送*/</span></span><br><span class="line">	<span class="keyword">if</span> (large_allowed &amp;&amp; sk_can_gso(sk)) &#123;</span><br><span class="line">		u32 gso_size, hlen;</span><br><span class="line"></span><br><span class="line">		<span class="comment">/* Maybe we should/could use sk-&gt;sk_prot-&gt;max_header here ? */</span></span><br><span class="line">		hlen = inet_csk(sk)-&gt;icsk_af_ops-&gt;net_header_len +</span><br><span class="line">		       inet_csk(sk)-&gt;icsk_ext_hdr_len +</span><br><span class="line">		       tp-&gt;tcp_header_len;</span><br><span class="line"></span><br><span class="line">		<span class="comment">/* 目标是每ms发送至少一个数据包，而不是每100 ms发送一个大的TSO数据包。</span></span><br><span class="line"><span class="comment">		   sk_pacing_rate为 每秒的bytes。</span></span><br><span class="line"><span class="comment">		   这保留了ACK时钟，并且与tcp_tso_should_defer（）启发式一致。</span></span><br><span class="line"><span class="comment">		   sysctl_tcp_min_tso_segs 为 sysctl控制的系统变量。我的系统环境中值为2。 </span></span><br><span class="line"><span class="comment">		 */</span></span><br><span class="line">		gso_size = sk-&gt;sk_pacing_rate / (<span class="number">2</span> * MSEC_PER_SEC);</span><br><span class="line">		gso_size = <span class="keyword">max_t</span>(u32, gso_size,</span><br><span class="line">				 sysctl_tcp_min_tso_segs * mss_now);</span><br><span class="line">		<span class="comment">/*xmit_size_goal为</span></span><br><span class="line"><span class="comment">		gso最大分段大小减去tcp和ip头部长度 与</span></span><br><span class="line"><span class="comment">		gso_size中比较小的值</span></span><br><span class="line"><span class="comment">		*/</span></span><br><span class="line">		xmit_size_goal = <span class="keyword">min_t</span>(u32, gso_size,</span><br><span class="line">				       sk-&gt;sk_gso_max_size - <span class="number">1</span> - hlen);</span><br><span class="line">		<span class="comment">/*最多达到收到的最大rwnd窗口通告的一半*/</span></span><br><span class="line">		xmit_size_goal = tcp_bound_to_half_wnd(tp, xmit_size_goal);</span><br><span class="line"></span><br><span class="line">		<span class="comment">/* We try hard to avoid divides here */</span></span><br><span class="line">		old_size_goal = tp-&gt;xmit_size_goal_segs * mss_now;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (likely(old_size_goal &lt;= xmit_size_goal &amp;&amp;</span><br><span class="line">			   old_size_goal + mss_now &gt; xmit_size_goal)) &#123;</span><br><span class="line">			xmit_size_goal = old_size_goal;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			tp-&gt;xmit_size_goal_segs =</span><br><span class="line">				<span class="keyword">min_t</span>(u16, xmit_size_goal / mss_now,</span><br><span class="line">				      sk-&gt;sk_gso_max_segs);</span><br><span class="line">			xmit_size_goal = tp-&gt;xmit_size_goal_segs * mss_now;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> max(xmit_size_goal, mss_now);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="tcp-sendmsg"><a href="#tcp-sendmsg" class="headerlink" title="tcp_sendmsg"></a>tcp_sendmsg</h5><p>应用程序send()数据后，会在tcp_sendmsg中尝试在同一个skb，保存size_goal大小的数据，然后再通过tcp_push把这些包通过tcp_write_xmit发出去。</p>
+<p>(代码涉及较多，以后进行分析，TBD)</p>
+<p>最终会调用tcp_push发送skb，而tcp_push又会调用tcp_write_xmit。tcp_sendmsg已经把数据按照GSO最大的size，放到一个个的skb中， 最终调用tcp_write_xmit发送这些GSO包。tcp_write_xmit会检查当前的拥塞窗口，还有nagle测试，tsq检查来决定是否能发送整个或者部分的skb， 如果只能发送一部分，则需要调用tso_fragment做切分。最后通过tcp_transmit_skb发送， 如果发送窗口没有达到限制，skb中存放的数据将达到GSO最大值。</p>
+<h5 id="tcp-write-xmit"><a href="#tcp-write-xmit" class="headerlink" title="tcp_write_xmit"></a>tcp_write_xmit</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">tcp_write_xmit</span><span class="params">(struct sock *sk, <span class="keyword">unsigned</span> <span class="keyword">int</span> mss_now, <span class="keyword">int</span> nonagle,</span></span></span><br><span class="line"><span class="function"><span class="params">			   <span class="keyword">int</span> push_one, <span class="keyword">gfp_t</span> gfp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">tcp_sock</span> *<span class="title">tp</span> = <span class="title">tcp_sk</span>(<span class="title">sk</span>);</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sk_buff</span> *<span class="title">skb</span>;</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">int</span> tso_segs, sent_pkts;</span><br><span class="line">	<span class="keyword">int</span> cwnd_quota;</span><br><span class="line">	<span class="keyword">int</span> result;</span><br><span class="line"></span><br><span class="line">	sent_pkts = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!push_one) &#123;</span><br><span class="line">		<span class="comment">/* Do MTU probing. */</span></span><br><span class="line">		result = tcp_mtu_probe(sk);</span><br><span class="line">		<span class="keyword">if</span> (!result) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (result &gt; <span class="number">0</span>) &#123;</span><br><span class="line">			sent_pkts = <span class="number">1</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">/*遍历发送队列*/</span></span><br><span class="line">	<span class="keyword">while</span> ((skb = tcp_send_head(sk))) &#123;</span><br><span class="line">		<span class="keyword">unsigned</span> <span class="keyword">int</span> limit;</span><br><span class="line"></span><br><span class="line">		tso_segs = tcp_init_tso_segs(sk, skb, mss_now);</span><br><span class="line">		BUG_ON(!tso_segs);</span><br><span class="line">	</span><br><span class="line">		<span class="keyword">if</span> (unlikely(tp-&gt;repair) &amp;&amp; tp-&gt;repair_queue == TCP_SEND_QUEUE)</span><br><span class="line">			<span class="keyword">goto</span> repair; <span class="comment">/* Skip network transmission */</span></span><br><span class="line"></span><br><span class="line">		cwnd_quota = tcp_cwnd_test(tp, skb);</span><br><span class="line">		<span class="keyword">if</span> (!cwnd_quota) &#123;</span><br><span class="line">			<span class="keyword">if</span> (push_one == <span class="number">2</span>)</span><br><span class="line">				<span class="comment">/* Force out a loss probe pkt. */</span></span><br><span class="line">				cwnd_quota = <span class="number">1</span>;</span><br><span class="line">			<span class="keyword">else</span></span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (unlikely(!tcp_snd_wnd_test(tp, skb, mss_now)))</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line">		<span class="comment">/*tso_segs=1表示无需tso分段*/</span></span><br><span class="line">		<span class="keyword">if</span> (tso_segs == <span class="number">1</span> || !sk-&gt;sk_gso_max_segs) &#123;</span><br><span class="line">          	<span class="comment">/* 根据nagle算法，计算是否需要推迟发送数据 */</span></span><br><span class="line">			<span class="keyword">if</span> (unlikely(!tcp_nagle_test(tp, skb, mss_now,</span><br><span class="line">						     (tcp_skb_is_last(sk, skb) ?</span><br><span class="line">						      nonagle : TCP_NAGLE_PUSH))))</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          	<span class="comment">/*有多个tso分段*/</span></span><br><span class="line">          	<span class="comment">/*push所有skb*/</span></span><br><span class="line">          	<span class="comment">/*如果发送窗口剩余不多，并且预计下一个ack将很快到来(意味着可用窗口会增加)，则推迟发送*/</span></span><br><span class="line">			<span class="keyword">if</span> (!push_one &amp;&amp; tcp_tso_should_defer(sk, skb))</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		limit = <span class="keyword">max_t</span>(<span class="keyword">unsigned</span> <span class="keyword">int</span>, sysctl_tcp_limit_output_bytes,</span><br><span class="line">			      sk-&gt;sk_pacing_rate &gt;&gt; <span class="number">10</span>);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (atomic_read(&amp;sk-&gt;sk_wmem_alloc) &gt; limit) &#123;</span><br><span class="line">			set_bit(TSQ_THROTTLED, &amp;tp-&gt;tsq_flags);</span><br><span class="line">			smp_mb__after_clear_bit();</span><br><span class="line">			<span class="keyword">if</span> (atomic_read(&amp;sk-&gt;sk_wmem_alloc) &gt; limit)</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">      	<span class="comment">/*下面的逻辑是：不用推迟发送，马上发送的情况*/</span></span><br><span class="line">		limit = mss_now;</span><br><span class="line">      	<span class="comment">/*由于tso_segs被设置为skb-&gt;len/mss_now，所以开启gso时一定大于1*/</span></span><br><span class="line">      	<span class="comment">/*tso分段大于1且非urg模式*/</span>      	</span><br><span class="line">		<span class="keyword">if</span> (tso_segs &gt; <span class="number">1</span> &amp;&amp; sk-&gt;sk_gso_max_segs &amp;&amp; !tcp_urg_mode(tp))</span><br><span class="line">          	<span class="comment">/*返回当前skb中可以发送的数据大小，通过mss和cwnd*/</span></span><br><span class="line">			limit = tcp_mss_split_point(sk, skb, mss_now,</span><br><span class="line">						    <span class="keyword">min_t</span>(<span class="keyword">unsigned</span> <span class="keyword">int</span>,</span><br><span class="line">							  cwnd_quota,</span><br><span class="line">							  sk-&gt;sk_gso_max_segs));</span><br><span class="line">		<span class="comment">/* 当skb的长度大于限制时，需要调用tso_fragment分片,如果分段失败则暂不发送 */</span></span><br><span class="line">		<span class="comment">/*按limit切割成多个skb*/</span></span><br><span class="line">		<span class="keyword">if</span> (skb-&gt;len &gt; limit &amp;&amp;</span><br><span class="line">		    unlikely(tso_fragment(sk, skb, limit, mss_now, gfp)))</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">		TCP_SKB_CB(skb)-&gt;when = tcp_time_stamp;</span><br><span class="line">		<span class="comment">/*发送，如果包被qdisc丢了，则退出循环，不继续发送了*/</span></span><br><span class="line">		<span class="keyword">if</span> (unlikely(tcp_transmit_skb(sk, skb, <span class="number">1</span>, gfp)))</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">repair:</span><br><span class="line">		<span class="comment">/*更新sk_send_head和packets_out*/</span></span><br><span class="line">		tcp_event_new_data_sent(sk, skb);</span><br><span class="line">		tcp_minshall_update(tp, mss_now, skb);</span><br><span class="line">		sent_pkts += tcp_skb_pcount(skb);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (push_one)</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (likely(sent_pkts)) &#123;</span><br><span class="line">		<span class="keyword">if</span> (tcp_in_cwnd_reduction(sk))</span><br><span class="line">			tp-&gt;prr_out += sent_pkts;</span><br><span class="line"></span><br><span class="line">		<span class="comment">/* Send one loss probe per tail loss episode. */</span></span><br><span class="line">		<span class="keyword">if</span> (push_one != <span class="number">2</span>)</span><br><span class="line">			tcp_schedule_loss_probe(sk);</span><br><span class="line">		tcp_cwnd_validate(sk);</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> (push_one == <span class="number">2</span>) || (!tp-&gt;packets_out &amp;&amp; tcp_send_head(sk));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中tcp_init_tso_segs会设置skb的gso信息后文分析。我们看到tcp_write_xmit 会调用tso_fragment进行“tcp分段”。而分段的条件是skb-&gt;len &gt; limit。这里的关键就是limit的值，我们看到在tso_segs &gt; 1时，也就是开启gso的时候，limit的值是由tcp_mss_split_point得到的，也就是min(skb-&gt;len, window)，即发送窗口允许的最大值。在没有开启gso时limit就是当前的mss。</p>
+<h5 id="tcp-init-tso-segs"><a href="#tcp-init-tso-segs" class="headerlink" title="tcp_init_tso_segs"></a>tcp_init_tso_segs</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Initialize TSO state of a skb.</span></span><br><span class="line"><span class="comment"> * This must be invoked the first time we consider transmitting</span></span><br><span class="line"><span class="comment"> * SKB onto the wire.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">tcp_init_tso_segs</span><span class="params">(<span class="keyword">const</span> struct sock *sk, struct sk_buff *skb,</span></span></span><br><span class="line"><span class="function"><span class="params">			     <span class="keyword">unsigned</span> <span class="keyword">int</span> mss_now)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> tso_segs = tcp_skb_pcount(skb);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!tso_segs || (tso_segs &gt; <span class="number">1</span> &amp;&amp; tcp_skb_mss(skb) != mss_now)) &#123;</span><br><span class="line">		tcp_set_skb_tso_segs(sk, skb, mss_now);</span><br><span class="line">		tso_segs = tcp_skb_pcount(skb);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> tso_segs;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>tcp_write_xmit最后会调用ip_queue_xmit发送skb，进入ip层。</p>
+<p>流程图如下：</p>
+<p><img src="/images/网络RPS-RFS-GSO-GRO等功能释义/GSO-TSO流程图.png" alt="GSO-TSO流程图"></p>
+<h3 id="UFO"><a href="#UFO" class="headerlink" title="UFO"></a>UFO</h3><p>UFO(UDP fragmentation offload)，UPD的offload。</p>
+<p>GRE 及 VXLAN接口初始化的时候，会置此位。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Initialize the device structure. */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">vxlan_setup</span><span class="params">(struct net_device *dev)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	……</span><br><span class="line">	dev-&gt;features   |= NETIF_F_GSO_SOFTWARE;</span><br><span class="line">	……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>还有其他driver也支持，例如 macvlan、tun、virtnet等。</p>
+<h3 id="LRO和GRO"><a href="#LRO和GRO" class="headerlink" title="LRO和GRO"></a>LRO和GRO</h3><p>当网卡收到很多碎片包的时候，LRO (Large Receive Offload)可以辅助自动组合成一段较大的数据，一次性提交给 OS处理。</p>
+<p>GRO(Generic Receive Offload)，比 LSO更通用，自动检测网卡支持特性，支持分包则直接发给网卡，否则先分包后发给网卡。</p>
+<p>driver macvlan支持GRO。</p>
+<p>以上功能大多可以通过 ethtool -K 开启。查看网卡 offload功能：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> ethtool -k em1 </span><br><span class="line">Features for em1:</span><br><span class="line">rx-checksumming: on</span><br><span class="line">tx-checksumming: on</span><br><span class="line">        tx-checksum-ipv4: off [fixed]</span><br><span class="line">        tx-checksum-ip-generic: on</span><br><span class="line">        tx-checksum-ipv6: off [fixed]</span><br><span class="line">        tx-checksum-fcoe-crc: on [fixed]</span><br><span class="line">        tx-checksum-sctp: on</span><br><span class="line">scatter-gather: on</span><br><span class="line">        tx-scatter-gather: on</span><br><span class="line">        tx-scatter-gather-fraglist: off [fixed]</span><br><span class="line">tcp-segmentation-offload: on</span><br><span class="line">        tx-tcp-segmentation: on</span><br><span class="line">        tx-tcp-ecn-segmentation: off [fixed]</span><br><span class="line">        tx-tcp6-segmentation: on</span><br><span class="line">        tx-tcp-mangleid-segmentation: off</span><br><span class="line">udp-fragmentation-offload: off [fixed]</span><br><span class="line">generic-segmentation-offload: on</span><br><span class="line">generic-receive-offload: on</span><br><span class="line">large-receive-offload: off</span><br><span class="line">rx-vlan-offload: on</span><br><span class="line">tx-vlan-offload: on</span><br><span class="line">ntuple-filters: off</span><br><span class="line">receive-hashing: on</span><br><span class="line">highdma: on [fixed]</span><br><span class="line">rx-vlan-filter: on</span><br><span class="line">vlan-challenged: off [fixed]</span><br><span class="line">tx-lockless: off [fixed]</span><br><span class="line">netns-local: off [fixed]</span><br><span class="line">tx-gso-robust: off [fixed]</span><br><span class="line">tx-fcoe-segmentation: on [fixed]</span><br><span class="line">tx-gre-segmentation: on</span><br><span class="line">tx-ipip-segmentation: on</span><br><span class="line">tx-sit-segmentation: on</span><br><span class="line">tx-udp_tnl-segmentation: on</span><br><span class="line">tx-mpls-segmentation: off [fixed]</span><br><span class="line">fcoe-mtu: off [fixed]</span><br><span class="line">tx-nocache-copy: off</span><br><span class="line">loopback: off [fixed]</span><br><span class="line">rx-fcs: off [fixed]</span><br><span class="line">rx-all: off</span><br><span class="line">tx-vlan-stag-hw-insert: off [fixed]</span><br><span class="line">rx-vlan-stag-hw-parse: off [fixed]</span><br><span class="line">rx-vlan-stag-filter: off [fixed]</span><br><span class="line">busy-poll: on [fixed]</span><br><span class="line">tx-gre-csum-segmentation: on</span><br><span class="line">tx-udp_tnl-csum-segmentation: on</span><br><span class="line">tx-gso-partial: on</span><br><span class="line">tx-sctp-segmentation: off [fixed]</span><br><span class="line">l2-fwd-offload: off</span><br><span class="line">hw-tc-offload: off [fixed]</span><br></pre></td></tr></table></figure>
+<p>网卡支持特性比较多，值得继续研究。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><strong>接收侧</strong>：</p>
+<p><strong>RSS</strong>是网卡驱动支持的多队列属性，队列通过中断绑定到不同的CPU，以实现流量负载。</p>
+<p><strong>RPS</strong>是以软件形式实现流量在不同CPU之间的分发。</p>
+<p><strong>RFS</strong>是报文需要在用户态处理时，保证处理的CPU与内核相同，防止缓存miss而导致的消耗。</p>
+<p>LRO 和 GRO，多个报文组成一个大包上送协议栈。</p>
+<p><strong>发送侧</strong>：</p>
+<p><strong>XPS</strong> 软件多队列发送。</p>
+<p><strong>TSO</strong>是利用网卡来对大数据包进行自动分段，降低CPU负载的技术。</p>
+<p><strong>GSO</strong>是协议栈分段功能。分段之前判断是否支持TSO，支持则推迟到网卡分段。 <strong>如果TSO开启，GSO会自动开启。</strong></p>
+<p><strong>UFO</strong>类似TSO，不过只针对UDP报文。</p>
+<h2 id="优秀资料"><a href="#优秀资料" class="headerlink" title="优秀资料"></a>优秀资料</h2><p><a href="http://www.qingpingshan.com/pc/fwq/235534.html" target="_blank" rel="noopener">Linux多队列网卡的硬件的实现详解</a></p>
+<p><a href="http://blog.chinaunix.net/uid-20788636-id-4838269.html" target="_blank" rel="noopener">Linux系统中RPS/RFS介绍</a></p>
+<p><a href="https://titenwang.github.io/2017/07/09/implementation-of-rps-and-rfs/" target="_blank" rel="noopener">Linux中rps/rfs的原理及实现</a></p>
+<p><a href="http://seitran.com/2015/04/13/01-gso-gro-lro/" target="_blank" rel="noopener">网卡TSO/GSO/LRO/GRO简要介绍</a></p>
+<p><a href="http://blog.jobbole.com/111668/" target="_blank" rel="noopener">Linux TCP GSO 和 TSO 实现</a></p>
+<p><a href="http://blog.chinaunix.net/uid-9543173-id-3546189.html" target="_blank" rel="noopener">TCP发送源码学习(1)–tcp_sendmsg</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>Donate comment here</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Chengqian 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Chengqian 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RSS/" rel="tag"># RSS</a>
+          
+            <a href="/tags/RPS/" rel="tag"># RPS</a>
+          
+            <a href="/tags/RFS/" rel="tag"># RFS</a>
+          
+            <a href="/tags/XPS/" rel="tag"># XPS</a>
+          
+            <a href="/tags/LSO/" rel="tag"># LSO</a>
+          
+            <a href="/tags/TSO/" rel="tag"># TSO</a>
+          
+            <a href="/tags/GSO/" rel="tag"># GSO</a>
+          
+            <a href="/tags/UFO/" rel="tag"># UFO</a>
+          
+            <a href="/tags/LRO/" rel="tag"># LRO</a>
+          
+            <a href="/tags/GRO/" rel="tag"># GRO</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/Openvswitch/OVS数据收发流程解析.html" rel="next" title="OVS数据收发流程解析">
+                <i class="fa fa-chevron-left"></i> OVS数据收发流程解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/Linux内核/NAPI-非NAPI收包分析.html" rel="prev" title="NAPI/非NAPI收包分析">
+                NAPI/非NAPI收包分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div onclick="showGitment()" id="gitment-display-button">显示 Gitment 评论</div>
+        <div id="gitment-container" style="display:none"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/light.jpg"
+                alt="Chengqian" />
+            
+              <p class="site-author-name" itemprop="name">Chengqian</p>
+              <p class="site-description motion-element" itemprop="description">Linux,内核</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">65</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/LiuChengqian90" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:xieling1990.happy@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#释义与代码分析"><span class="nav-number">1.</span> <span class="nav-text">释义与代码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RSS"><span class="nav-number">1.1.</span> <span class="nav-text">RSS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RPS"><span class="nav-number">1.2.</span> <span class="nav-text">RPS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#XPS"><span class="nav-number">1.3.</span> <span class="nav-text">XPS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RFS"><span class="nav-number">1.4.</span> <span class="nav-text">RFS</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#设备流表"><span class="nav-number">1.4.1.</span> <span class="nav-text">设备流表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#全局socket流表"><span class="nav-number">1.4.2.</span> <span class="nav-text">全局socket流表</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LSO、TSO-和-GSO"><span class="nav-number">1.5.</span> <span class="nav-text">LSO、TSO 和 GSO</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#开启GSO-TSO"><span class="nav-number">1.5.1.</span> <span class="nav-text">开启GSO/TSO</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#是否推迟分段"><span class="nav-number">1.5.2.</span> <span class="nav-text">是否推迟分段</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#sk-setup-caps"><span class="nav-number">1.5.2.1.</span> <span class="nav-text">sk_setup_caps</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#sk-can-gso"><span class="nav-number">1.5.2.2.</span> <span class="nav-text">sk_can_gso</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#net-gso-ok"><span class="nav-number">1.5.2.3.</span> <span class="nav-text">net_gso_ok</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#GSO的数据包长度"><span class="nav-number">1.5.3.</span> <span class="nav-text">GSO的数据包长度</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#tcp-send-mss"><span class="nav-number">1.5.3.1.</span> <span class="nav-text">tcp_send_mss</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#tcp-xmit-size-goal"><span class="nav-number">1.5.3.2.</span> <span class="nav-text">tcp_xmit_size_goal</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#tcp-sendmsg"><span class="nav-number">1.5.3.3.</span> <span class="nav-text">tcp_sendmsg</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#tcp-write-xmit"><span class="nav-number">1.5.3.4.</span> <span class="nav-text">tcp_write_xmit</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#tcp-init-tso-segs"><span class="nav-number">1.5.3.5.</span> <span class="nav-text">tcp_init_tso_segs</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UFO"><span class="nav-number">1.6.</span> <span class="nav-text">UFO</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LRO和GRO"><span class="nav-number">1.7.</span> <span class="nav-text">LRO和GRO</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">2.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#优秀资料"><span class="nav-number">3.</span> <span class="nav-text">优秀资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chengqian</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i> 访问人数
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i> 总访问量
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://aimingoo.github.io/gitmint/style/default.css">
+        <script src="https://aimingoo.github.io/gitmint/dist/gitmint.browser.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitmint({
+            id: window.location.pathname, 
+            owner: 'liuchengqian90',
+            repo: 'gitment',
+            
+            lang: "" || navigator.language || navigator.systemLanguage || navigator.userLanguage,
+            
+            oauth: {
+            
+            
+                client_secret: '57637fdfaa3651feedb3508d14dbcb2281759464',
+            
+                client_id: '65375d4616cbf227418e'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      function showGitment(){
+        document.getElementById("gitment-display-button").style.display = "none";
+        document.getElementById("gitment-container").style.display = "block";
+        renderGitment();
+      }
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("OxuGm1sftgvx1pybK4fNvWEI-gzGzoHsz", "wVNroDGKbkHDfo8jS43cWkzo");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+  <script type="text/javascript" src="/js/src/js.cookie.js?v=5.1.4"></script>
+  <script type="text/javascript" src="/js/src/scroll-cookie.js?v=5.1.4"></script>
+
+
+  
+
+</body>
+</html>
