@@ -1,9 +1,9 @@
 ---
 title: hexo搭建github网页之统计
 date: 2017-10-20 15:48:14
+categories: Hexo
 tags:
-  - hexo
-  - github
+  - 网站统计
 ---
 
 ## 网站统计

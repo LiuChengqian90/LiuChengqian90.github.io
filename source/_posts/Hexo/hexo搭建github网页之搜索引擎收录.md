@@ -1,9 +1,9 @@
 ---
 title: hexo搭建github网页之搜索引擎收录
 date: 2017-10-20 18:33:54
+categories: Hexo
 tags:
-  - hexo
-  - github
+  - 搜索引擎
 ---
 
 ## 确认收录

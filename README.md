@@ -1,5 +1,10 @@
 # LiuChengqian90.github.io
-backup hexo+github
+Centos 安装 npm
+
+```shell
+# yum list | grep epel  //安装搜索结果源
+# yum install -y nodejs
+```
 
 一、关于搭建的流程
 
@@ -31,4 +36,3 @@ backup hexo+github
 参考资料：
 
 [知乎参考](https://www.zhihu.com/question/21193762)
-
