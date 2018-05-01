@@ -1,12 +1,14 @@
 ---
 title: hexo搭建github网页之评论
 date: 2017-10-20 18:34:23
+categories: Hexo
 tags:
- - hexo
- - github
+ - 评论
 ---
 
 hexo搭建的博客下，有多种评论系统可供选择：Disqus、多说和友言等。但是由于被墙或者评论系统关闭，已不可再用。本介绍基于 GitHub Issues开发的评论系统——[gitment](https://github.com/imsun/gitment)。
+
+在新版的 HEXO NEXT主题中，已经集成了 GITMENT。
 
 ## OAuth Application
 
@@ -186,3 +188,23 @@ gitment创作者列出的[配置方法](https://imsun.net/posts/gitment-introduc
    test.js为下载到本地加入调试信息的文件。
 
 4. 最易出错的地方应该是字段置换错误（layout/_third-party/comments/gitment.swig文件调用js时，字段已经置换）。可进入浏览器调试模式（F12）进行调试。
+
+## 问题
+
+1. redirect_uri_mismatch
+
+   一般为 Authorization callback URL 设置错误。设置为自己的网站首页，例如"https://chengqian90.com/"。
+
+2. 初始化评论时，Error: Validation Failed
+
+   更改gitment.swig  文件中gitment ID。
+
+   ```shell
+   function renderGitment(){
+           var gitment = new {{CommentsClass}}({
+   -           id: window.location.pathname,
+   +           id: '{{ page.date }}',
+               owner: '{{ theme.gitment.github_user }}',
+               repo: '{{ theme.gitment.github_repo }}',
+               ……
+   ```
