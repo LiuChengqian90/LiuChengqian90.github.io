@@ -48,7 +48,7 @@ static inline void rcu_read_unlock_bh(void);
 
 这个变种只在修改是通过 `call_rcu_bh`进行的情况下使用，因为 `call_rcu_bh`将把 softirq 的执行完毕也认为是一个 quiescent state，因此如果修改是通过 `call_rcu_bh` 进行的，在进程上下文的读端临界区必须使用这一变种。
 
-每一个 CPU 维护两个数据结构 `rcu_sched_data`，`rcu_bh_data`，它们用于保存回调函数。函数`call_rcu`和函数`call_rcu_bh`用于注册回调函数，前者把回调函数注册到`rcu_sched_data`，而后者则把回调函数注册到`rcu_bh_data`，在每一个数据结构上，回调函数被组成一个链表，先注册的排在前头，后注册的排在末尾。
+每一个 CPU 维护两个数据结构 `rcu_sched_data`，`rcu_bh_data`，它们用于**保存**回调函数。函数`call_rcu`和函数`call_rcu_bh`用于**注册**回调函数，前者把回调函数注册到`rcu_sched_data`，而后者则把回调函数注册到`rcu_bh_data`，在每一个数据结构上，回调函数被组成一个链表，先注册的排在前头，后注册的排在末尾。
 
 时钟中断处理函数（`update_process_times`）调用函数`rcu_check_callbacks`。
 
@@ -65,7 +65,7 @@ static inline void rcu_read_unlock_bh(void);
 
 ## 核心API
 
-API还有许多其他的成员，但其余的可以用这五个来表示，但是大多数的实现都是用call_rcu()回调API来表示synchronize_rcu()。
+API还有许多其他的成员，其余的都可以用这五个来表示，但是大多数的实现都是用call_rcu()回调API来表示synchronize_rcu()。
 
 ### rcu_read_lock()
 
@@ -77,9 +77,7 @@ API还有许多其他的成员，但其余的可以用这五个来表示，但�
 
 ### rcu_assign_pointer()
 
-分配给受RCU保护的指针。
-
-将指定的值分配给指定的受RCU保护的指针，确保任何并发的RCU读取器都能看到任何先前的初始化。
+将指定的值分配给受RCU保护的指针，确保任何并发的RCU读取器都能看到任何先前的初始化。（**赋值**）
 
 将内存屏障插入到需要它们的体系结构中（其中大部分都是这样），并且还防止编译器在指针分配后重新排序初始化结构的代码。 
 
@@ -94,12 +92,13 @@ API还有许多其他的成员，但其余的可以用这五个来表示，但�
 	} while (0)
 ```
 
-在一些特殊情况下，您可以使用RCU_INIT_POINTER（）而不是rcu_assign_pointer（）。 由于RCU_INIT_POINTER（）不限制CPU或编译器，因此RCU_INIT_POINTER（）速度更快。
-但是，当你应该使用rcu_assign_pointer（）时，使用RCU_INIT_POINTER（）是一件非常糟糕的事情，它会导致无法诊断内存损坏。 
+在一些特殊情况下，您可以使用RCU_INIT_POINTER()而不是rcu_assign_pointer()。 由于RCU_INIT_POINTER()不限制CPU或编译器，因此RCU_INIT_POINTER()速度更快。
+
+但是，当你应该使用rcu_assign_pointer()而使用了RCU_INIT_POINTER()时，是一件非常糟糕的事情，它会导致无法诊断内存损坏。 
 
 ### rcu_dereference()
 
-获取RCU保护的指针以取消引用。
+获取RCU保护的指针。
 
 ```c
 #define rcu_dereference(p) rcu_dereference_check(p, 0)
@@ -121,9 +120,11 @@ API还有许多其他的成员，但其余的可以用这五个来表示，但�
 
 ### synchronize_rcu() / call_rcu()
 
-synchronize_rcu()在RCU中是一个最核心的函数,它用来等待之前的读者全部退出。
+synchronize_rcu()在RCU中是一个**最核心**的函数,它用来等待之前的读者全部退出。
 
-在完整的宽限期结束后，即在所有当前正在执行的RCU读取端临界区完成之后，控制权会在一段时间后返回给调用者。 但是，请注意，从synchronize_rcu（）返回时，调用者可能会同时执行新的RCU读取端临界区，这些区在synchronize_rcu（）正在等待时开始。 RCU读取端临界区由rcu_read_lock（）和rcu_read_unlock（）定界，并且可以嵌套。
+在完整的宽限期结束后，即在所有当前正在执行的RCU读取端临界区完成之后，控制权会在一段时间后返回给调用者。
+
+但是，请注意，从synchronize_rcu()返回时，调用者可能会同时执行新的RCU读取端临界区，这些区在synchronize_rcu()正在等待时开始。 RCU读取端临界区由rcu_read_lock()和rcu_read_unlock()定界，并且可以嵌套。
 
 ```c
 void synchronize_rcu(void)
@@ -143,10 +144,10 @@ void synchronize_rcu(void)
 
 ```c
 #ifdef CONFIG_RCU_BOOST
-
-/* 基本思想是调用synchronize_sched_expedited（）将所有任务推送到 ->blkd_tasks列表并等待这个列表排空。 
+/*
+基本思想是调用synchronize_sched_expedited()将所有任务推送到 ->blkd_tasks列表并等待这个列表排空。 
 这会在所有CPU上消耗大量时间，并且对实时工作负载不利，因此不建议用于任何类型的常见代码。
-实际上，如果您在循环中使用synchronize_rcu_expedited（），请重构您的代码以批量更新，然后改为使用一个synchronize_rcu（）。
+实际上，如果您在循环中使用synchronize_rcu_expedited()，请重构您的代码以批量更新，然后改为使用一个synchronize_rcu()。
 
 请注意，在保持CPU热插拔通知程序获取的任何锁定的同时调用此函数是非法的。 
 从CPU-hotplug通知器调用此函数也是非法的。 不遵守这些限制将导致死锁。
@@ -164,20 +165,15 @@ void synchronize_rcu_expedited(void)
 	smp_mb(); /* Above access cannot bleed into critical section. */
 
 	/*
-	 * Block CPU-hotplug operations.  This means that any CPU-hotplug
-	 * operation that finds an rcu_node structure with tasks in the
-	 * process of being boosted will know that all tasks blocking
-	 * this expedited grace period will already be in the process of
-	 * being boosted.  This simplifies the process of moving tasks
-	 * from leaf to root rcu_node structures.
+	 阻止CPU热插拔操作。
+     这意味着找到一个rcu_node结构的任务的CPU热插拔操作将会知道阻塞这个加速宽限期的所有任务已经处于提升过程中。 这简化了将任务从叶子移动到根rcu_node结构的过程。
 	 */
 	get_online_cpus();
 
 	/*
-	 * Acquire lock, falling back to synchronize_rcu() if too many
-	 * lock-acquisition failures.  Of course, if someone does the
-	 * expedited grace period for us, just leave.
-	 */
+	获取锁定，如果锁定采集失败太多，则回退到synchronize_rcu()。
+    当然，如果有人对我们加快宽限期，就离开。
+	*/
 	while (!mutex_trylock(&sync_rcu_preempt_exp_mutex)) {
 		if (ULONG_CMP_LT(snap,
 		    ACCESS_ONCE(sync_rcu_preempt_exp_count))) {
@@ -197,17 +193,17 @@ void synchronize_rcu_expedited(void)
 		goto unlock_mb_ret; /* Others did our work for us. */
 	}
 
-	/* force all RCU readers onto ->blkd_tasks lists. */
+	/* 强制所有RCU readers 进入 -> blkd_tasks列表 */
 	synchronize_sched_expedited();
 
-	/* Initialize ->expmask for all non-leaf rcu_node structures. */
+	/* 初始化所有非叶rcu_node结构的expmask */
 	rcu_for_each_nonleaf_node_breadth_first(rsp, rnp) {
 		raw_spin_lock_irqsave(&rnp->lock, flags);
 		rnp->expmask = rnp->qsmaskinit;
 		raw_spin_unlock_irqrestore(&rnp->lock, flags);
 	}
 
-	/* Snapshot current state of ->blkd_tasks lists. */
+	/* 对 blkd_tasks列表的当前状态进行快照 */
 	rcu_for_each_leaf_node(rsp, rnp)
 		sync_rcu_preempt_exp_init(rsp, rnp);
 	if (NUM_RCU_NODES > 1)
@@ -215,18 +211,17 @@ void synchronize_rcu_expedited(void)
 
 	put_online_cpus();
 
-	/* Wait for snapshotted ->blkd_tasks lists to drain. */
+	/* 等待快照 blkd_tasks列表消失. */
 	rnp = rcu_get_root(rsp);
 	wait_event(sync_rcu_preempt_exp_wq,
 		   sync_rcu_preempt_exp_done(rnp));
-
 	/* Clean up and exit. */
-	smp_mb(); /* ensure expedited GP seen before counter increment. */
+	smp_mb(); /* 确保在计数器增量前看到加速的GP */
 	ACCESS_ONCE(sync_rcu_preempt_exp_count)++;
 unlock_mb_ret:
 	mutex_unlock(&sync_rcu_preempt_exp_mutex);
 mb_ret:
-	smp_mb(); /* ensure subsequent action seen after grace period. */
+	smp_mb(); /* 确保宽限期后的后续行动 */
 }
 
 #else
@@ -237,18 +232,135 @@ void synchronize_rcu_expedited(void)
 #endif
 ```
 
+函数`synchronize_sched_expedited`此处先不分析。开始分析`wait_rcu_gp`。
+
+#### wait_rcu_gp
+
+```c
+struct callback_head {
+	struct callback_head *next;
+	void (*func)(struct callback_head *head);
+};
+#define rcu_head callback_head
+
+struct rcu_synchronize {
+	struct rcu_head head;
+	struct completion completion;
+};
+```
+
 ```c
 void wait_rcu_gp(call_rcu_func_t crf)
 {
 	struct rcu_synchronize rcu;
-
+	/*debug相关*/
 	init_rcu_head_on_stack(&rcu.head);
+    /*初始化完成变量。完成变量的操作可参考之前的文章*/
 	init_completion(&rcu.completion);
 	/* Will wake me after RCU finished. */
 	crf(&rcu.head, wakeme_after_rcu);
 	/* Wait for it. */
 	wait_for_completion(&rcu.completion);
 	destroy_rcu_head_on_stack(&rcu.head);
+}
+```
+所以重要步骤为 `crf(&rcu.head, wakeme_after_rcu);`，分别进行分析。
+
+#### wakeme_after_rcu
+
+```c
+/*此函数是对完成变量进行唤醒操作*/
+static void wakeme_after_rcu(struct rcu_head *head)
+{
+	struct rcu_synchronize *rcu;
+
+	rcu = container_of(head, struct rcu_synchronize, head);
+	complete(&rcu->completion);
+}
+```
+
+#### call_rcu
+
+```c
+void call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu))
+{
+	__call_rcu(head, func, &rcu_preempt_state, -1, 0);
+}
+--->>>
+/*
+将参数传入的回调函数fun赋值给一个struct rcu_head变量，
+再将这个struct rcu_head加在了per_cpu变量rcu_data的nxttail 链表上。
+ */
+static void
+__call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
+	   struct rcu_state *rsp, int cpu, bool lazy)
+{
+	unsigned long flags;
+	struct rcu_data *rdp;
+
+	WARN_ON_ONCE((unsigned long)head & 0x3); /* Misaligned rcu_head! */
+	debug_rcu_head_queue(head);
+	head->func = func;
+	head->next = NULL;
+    
+	local_irq_save(flags);
+	rdp = this_cpu_ptr(rsp->rda);
+
+	/* Add the callback to our list. */
+	if (unlikely(rdp->nxttail[RCU_NEXT_TAIL] == NULL) || cpu != -1) {
+		int offline;
+
+		if (cpu != -1)
+			rdp = per_cpu_ptr(rsp->rda, cpu);
+		offline = !__call_rcu_nocb(rdp, head, lazy);
+		WARN_ON_ONCE(offline);
+		/* _call_rcu() is illegal on offline CPU; leak the callback. */
+		local_irq_restore(flags);
+		return;
+	}
+	ACCESS_ONCE(rdp->qlen)++;
+	if (lazy)
+		rdp->qlen_lazy++;
+	else
+		rcu_idle_count_callbacks_posted();
+	smp_mb();  /* Count before adding callback for rcu_barrier(). */
+	*rdp->nxttail[RCU_NEXT_TAIL] = head;
+	rdp->nxttail[RCU_NEXT_TAIL] = &head->next;
+	…………
+	local_irq_restore(flags);
+}
+```
+
+由上所述，`synchronize_rcu`的调用关系图如下：
+
+![synchronize_rcu](/images/Linux RCU锁机制/synchronize_rcu.png)
+
+之前说，只需要判断所有的CPU都进过了一次上下文切换，就说明所有读者已经退出了。为什么这么说呢？要彻底弄清楚这个问题，我们得从RCU的初始化说起。
+
+## RCU的初始化
+
+RCU的初始化开始于start_kernel()–>rcu_init()。
+
+```c
+void __init rcu_init(void)
+{
+	int cpu;
+
+	rcu_bootup_announce();
+	rcu_init_geometry();
+	rcu_init_one(&rcu_sched_state, &rcu_sched_data);
+	rcu_init_one(&rcu_bh_state, &rcu_bh_data);
+	__rcu_init_preempt();
+	open_softirq(RCU_SOFTIRQ, rcu_process_callbacks);
+
+	/*
+	 * We don't need protection against CPU-hotplug here because
+	 * this is called early in boot, before either interrupts
+	 * or the scheduler are operational.
+	 */
+	cpu_notifier(rcu_cpu_notify, 0);
+	for_each_online_cpu(cpu)
+		rcu_cpu_notify(NULL, CPU_UP_PREPARE, (void *)(long)cpu);
 }
 ```
 
@@ -263,4 +375,3 @@ void wait_rcu_gp(call_rcu_func_t crf)
 [深入理解 RCU 实现](http://blog.jobbole.com/106856/)
 
 [RCU synchronize原理分析](http://www.wowotech.net/kernel_synchronization/223.html)
-

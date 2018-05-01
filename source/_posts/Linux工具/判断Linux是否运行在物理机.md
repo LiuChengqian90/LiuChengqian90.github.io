@@ -115,8 +115,6 @@ supports-register-dump: no
 supports-priv-flags: no
 ```
 
-
-
 此处简单介绍一下`lspci`命令。
 
 ## lspci
