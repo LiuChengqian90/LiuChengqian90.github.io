@@ -11,5 +11,6 @@ Disallow: /fonts/
 Disallow: /vendors/
 Disallow: /fancybox/
 
-Sitemap: https://chengqian90/sitemap.xml
-Sitemap: https://chengqian90/baidusitemap.xml
+Sitemap: https://chengqian90.com/search.xml
+Sitemap: https://chengqian90.com/sitemap.xml
+Sitemap: https://chengqian90.com/baidusitemap.xml
