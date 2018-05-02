@@ -22,7 +22,7 @@ Centos 安装 npm
 二、关于日常的改动流程
 在本地对博客进行修改（添加新博文、修改样式等等）后，通过下面的流程进行管理。
 
-1. 依次执行hexo clean;rm -rf deploy_git;git add -A; git commit -m "backup to git"; git push origin hexo指令将改动推送到GitHub（此时当前分支应为hexo）；
+1. 依次执行hexo clean;rm -rf .deploy_git;git add -A; git commit -m "backup to git"; git push origin hexo指令将改动推送到GitHub（此时当前分支应为hexo）；
 2. 然后才执行hexo g -d发布网站到master分支上。
 
 虽然两个过程顺序调转一般不会有问题，不过逻辑上这样的顺序是绝对没问题的（例如突然死机要重装了，悲催....的情况，调转顺序就有问题了）。
