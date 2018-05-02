@@ -117,6 +117,33 @@ site:baidu.com
 
 这个应该是最费事的方式，估计…没人会用。
 
-## 参考资料
+## 蜘蛛协议
+
+在站点`source`目录下创建`robots.txt`文件。
+
+```json
+User-agent: *
+Allow: /
+Allow: /archives/
+Allow: /tags/
+Allow: /about/
+
+Disallow: /vendors/
+Disallow: /js/
+Disallow: /css/
+Disallow: /fonts/
+Disallow: /vendors/
+Disallow: /fancybox/
+
+Sitemap: https://chengqian90.com/search.xml
+Sitemap: https://chengqian90.com/sitemap.xml
+Sitemap: https://chengqian90.com/baidusitemap.xml
+```
+
+robots文件格式请参考 [robots.txt文件的格式](https://ziyuan.baidu.com/college/courseinfo?id=267&page=12#h2_article_title30)。
+
+## 优秀资料
 
 [github+hexo提交到百度谷歌搜索引擎](http://www.jianshu.com/p/7e1166eb412a)
+
+[使用 Hexo 搭建博客的深度优化与定制](https://github.com/heytxz/test/issues/20)
