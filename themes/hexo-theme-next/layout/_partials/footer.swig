@@ -45,3 +45,6 @@
   #}{{ theme.footer.custom_text }}{#
 #}</div>
 {% endif %}
+<div>
+<a href="http://www.miitbeian.gov.cn/">京ICP备18025897号</a> 
+</div>
