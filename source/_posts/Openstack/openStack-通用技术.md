@@ -1,7 +1,7 @@
 ---
-title: OpenStack 通用技术
+title: openStack 通用技术
 date: 2018-04-13 11:44:09
-categories: Openstack
+categories: openstack
 tags:
   - openstack
 ---
@@ -18,17 +18,17 @@ OpenStack遵循这样的设计原则：项目之间通过 RESTful API 进行通�
 
 目前已有多种消息总线的开源实现，OpenStack也对其中的部分实现有所支持，比如RabbitMQ、Qpid等，基于这些消息总线类型，OpenStack oslo.messaging库实现了以下两种方式来完成项目内部各服务进程之间的通信。
 
-- - 远程过程调用（RPC，Remote Procedure Call）
+- 远程过程调用（RPC，Remote Procedure Call）
 
-    一个服务进程可以调用其他远程服务进程，并且有两种调用方式：call 和 cast。
+  一个服务进程可以调用其他远程服务进程，并且有两种调用方式：call 和 cast。
 
-    ​	call ，远程方法同步执行，调用者会被阻塞知道结果返回；
+  ​	call ，远程方法同步执行，调用者会被阻塞知道结果返回；
 
-    ​	cast ，远程方法异步执行，调用者不会被阻塞但是需要利用其他方式查询结果。
+  ​	cast ，远程方法异步执行，调用者不会被阻塞但是需要利用其他方式查询结果。
 
-- - 事件通知（Event Notification）
+- 事件通知（Event Notification）
 
-    某个服务进程把事件通知发送到消息总线上，该消息总线上所有对此类事件感兴趣的服务进程，都可以获得此事件通知并进行相应处理，处理结果不会返回给事件发送者。这种通信方式，既可以在同一项目内部各个服务进程间发送通知，也可以实现跨项目的通知发送。Ceilometer利用此方式。
+  某个服务进程把事件通知发送到消息总线上，该消息总线上所有对此类事件感兴趣的服务进程，都可以获得此事件通知并进行相应处理，处理结果不会返回给事件发送者。这种通信方式，既可以在同一项目内部各个服务进程间发送通知，也可以实现跨项目的通知发送。Ceilometer利用此方式。
 
 ### AMQP
 
@@ -88,7 +88,7 @@ SQLAlchemy主要分为两部分： **SQLAlchemy Core（SQLAlchemy核心）** 和
 
 ORM 在 WEB 应用程序框架中也经常提到，因为它是快速开发栈中的关键组件。现代程序开发语言大多是面向对象的，而现今主流成熟的数据库系统基本上都是关系型数据库。所以，ORM主要解决的问题就是将面向对象型的程序操作映射成对数据库进行操作，而且把关系数据库的查询结果转成对象型数据便于程序访问。
 
-举一个简单的例子，如果数据库中有两张表如下图，
+举一个简单的例子，如果数据库中有两张表如下：
 
 table users
 
@@ -376,31 +376,29 @@ Paste配置文件分为多个section，每个section以type:name的格式命名�
 
 - type = composite
 
-  这个类型的section会把URL请求分发到对应的Application，use表明具体的分发方式，比如“egg:Paste#urlmap”表示使用Paste包中的urlmap模块，
-
-  这个section里的其他形如“key = value”的行是使用urlmap分发时的参数。
+  这个类型的section会把URL请求分发到对应的Application，use表明具体的分发方式，比如“egg:Paste#urlmap”表示使用Paste包中的urlmap模块，这个section里的其他形如“key = value”的行是使用urlmap分发时的参数。
 
 - type = app
 
   一个app就是一个具体的WSGI Application，这个app对应的Python代码则有use来指定，共有两种指定方法。
 
-  - ```json
-    [app:myapp]
-    #从另外一个config.ini文件中寻找app
-    use = config:another_config_file.ini#app_name
-    
-    [app:myanotherapp]
-    #从Python EGG中寻找
-    use = egg:Myapp
-    
-    [app:mythirdapp]
-    #直接调用另外一个模块中的myapplication
-    use = call:my.project:myapplication
-    
-    [app:mylastapp]
-    #从另外一个section中
-    use = myotherapp
-    ```
+  ```json
+  [app:myapp]
+  #从另外一个config.ini文件中寻找app
+  use = config:another_config_file.ini#app_name
+  
+  [app:myanotherapp]
+  #从Python EGG中寻找
+  use = egg:Myapp
+  
+  [app:mythirdapp]
+  #直接调用另外一个模块中的myapplication
+  use = call:my.project:myapplication
+  
+  [app:mylastapp]
+  #从另外一个section中
+  use = myotherapp
+  ```
 
     另外一种指定方法是明确指明对应的Python代码，这是必须给出代码所应该符合的格式，比如
 
@@ -482,11 +480,12 @@ Paste配置文件分为多个section，每个section以type:name的格式命名�
               raise exception.PasteAppNotFound(name=name, path=self.config_path)
   ```
 
-  
 
 ### WebOb
 
-除了Routes与Paste Deploy外，OpenStack中另一个与WSGI密切相关的是WebOb（http://webob.org/）。WebOb通过对WSGI的请求与响应进行封装，来简化WSGI应用的编写。
+除了Routes与Paste Deploy外，OpenStack中另一个与WSGI密切相关的是[WebOb](http://webob.org/)。
+
+WebOb通过对WSGI的请求与响应进行封装，来简化WSGI应用的编写。
 
 WebOb中有两个最重要的对象，一是webob.Request，对WSGI请求的environ参数进行封装，一是webob.Response，包含了标准WSGI响应的所有要素。此外，还有一个webob.exc对象，针对HTTP错误代码进行封装。
 
@@ -497,8 +496,6 @@ WebOb中有两个最重要的对象，一是webob.Request，对WSGI请求的envi
 def myfunc(req):
 	return webob.Response('hey there')
 ```
-
-​	
 
 调用时可以有两种选择：
 
@@ -558,8 +555,6 @@ class Middleware(Application):
         return self.process_response(response)
 ```
 
-​	
-
 ## Eventlet
 
 目前，OpenStack中的绝大部分项目都采用协程（coroutine）模型。从操作系统的角度来看，**一个OpenStack服务只会运行在一个进程中，但在这个进程中，OpenStack利用Python库Eventlet可以产生出多个协程，协程只有在调用到了某些特殊的Eventlet库函数的时候（比如睡眠sleep，I/O调用）才会发生切换。**
@@ -570,11 +565,9 @@ class Middleware(Application):
 
 ### Eventlet
 
-​	Eventlet（http://eventlet.net）是一个Python的网络库，它可以通过协程的方式来实现并发。Eventlet将协程又称为GreenThread（绿色线程），所谓并发，就是创建多个GreenThread并对其进行管理。
+​	[Eventlet](http://eventlet.net)是一个Python的网络库，它可以通过协程的方式来实现并发。Eventlet将协程又称为GreenThread（绿色线程），所谓并发，就是创建多个GreenThread并对其进行管理。
 
 ​	一个简单的例子如下：
-
-​	
 
 ```python
 import eventlet
@@ -586,8 +579,6 @@ import eventlet
 	gt = eventlet.spawn(my_func, work_to_process)
 	result = gt.wait()
 ```
-
-​	
 
 ​	eventlet.spawn会新建一个GreenThread来运行my_func函数。由于GreenThread不会进行抢占式调度，所以此时新建的GreenThread只是被标示为可调度，并不会被立即调度执行。只有当**主线程gt.wait()**时，这个GreenThread才会有机会被调度去执行my_func函数。
 
@@ -601,8 +592,6 @@ import eventlet
 
 eventlet.monkey_patch(socket=True, select=True, thread=True, time=True)
 ```
-
-​	
 
 ​	为了实现GreenThread，Eventlet需要对Python中与网络相关的一些标准库函数进行改写，并以补丁（patch）的方式导入到程序中，这里的eventlet.monkey_patch()函数就是用于这个目的。
 
@@ -685,8 +674,6 @@ eventlet.monkey_patch(socket=True, select=True, thread=True, time=True)
 			self.threads.append(th)
 			return th
 ```
-
-
 
 ### AsyncIO
 
@@ -832,7 +819,11 @@ setup(
 
 ### oslo.config
 
-​	oslo.config库用于解析命令行和配置文件中的配置选项。项目主页为https://launchpad.net/oslo.config，参考文档在http://docs.openstack.org/developer/oslo.config。
+​	oslo.config库用于解析命令行和配置文件中的配置选项。
+
+项目主页为https://launchpad.net/oslo.config，
+
+参考文档在http://docs.openstack.org/developer/oslo.config。
 
 ​	通过几个应用场景来介绍oslo.config的使用方法：
 
@@ -1235,8 +1226,6 @@ cctxt.cast({}, 'stop')
 
 Target对象的属性在RPCClient对象构造以后，还可以通过prepare()方法修改。可以修改的属性包括 exchage topic namespace version server fanout timeout version_cap和retry。修改后的target属性只在这个prepare()方法返回的对象中有效。
 
-
-
 再看一个利用oslo.messaging实现消息通知的例子：
 
 ```python
@@ -1579,7 +1568,6 @@ task的输出结果一般是指execute方法的返回值。但是Python的返回
   storage.fetch('the_answer')
   ```
 
-  
 
 - 返回的是元组tuple：
 
@@ -1611,15 +1599,15 @@ task的输出结果一般是指execute方法的返回值。但是Python的返回
 
 可以利用在 https://git.openstack.org/openstack-dev/cookiecutter 的模板，新建一个符合惯例的OpenStack项目。
 
-1. ```shell
-   # sudo pip install cookiecutter
-   # cookiecutter https://git.openstack.org/openstack-dev/cookiecutter
-   #（输入自己的模块名，例如abc）
-   #  cd abc
-   #  git init
-   #  git add . 
-   #  git commit -a
-   ```
+```shell
+# sudo pip install cookiecutter
+# cookiecutter https://git.openstack.org/openstack-dev/cookiecutter
+#（输入自己的模块名，例如abc）
+#  cd abc
+#  git init
+#  git add . 
+#  git commit -a
+```
 
 可以看到利用 cookiecutter模板建立起来的项目中，顶层目录下包含下表所示文件和目录
 
@@ -1675,9 +1663,6 @@ def core_authorizer(api_name, extension_name):
             act = '%s:%s:%s' % (api_name, extension_name, action)
         nova.policy.enforce(context, act, target)
     return authorize
-
-
-
 ```
 
 相应的/etc/nova/policy.json文件内容为：
