@@ -50,6 +50,11 @@ hexo建站支持多种站内搜索方式，现对几种常用的方式进行简�
 
 此特性在theme-next版本 5.1.0 中引入，要使用此功能请确保所使用的 NexT 版本在此之后。
 
+先不要按照步骤一块配置，先明确以下两点：
+
+- 如果仅仅支持标题搜索，可跳过`优化`一节；
+- `优化`一节讲述如何配置多域搜索（标题、文章内容等）。
+
 ### 注册
 
 官网](https://www.algolia.com/) 进行账号注册（可使用github或google账号登录）。
@@ -104,12 +109,12 @@ hexo建站支持多种站内搜索方式，现对几种常用的方式进行简�
 
 编辑 `站点配置文件`，新增以下配置：
 
-```json
+```yaml
 algolia:
-  applicationID: applicationID
-  apiKey: Search-Only API Key(第一个创建的key)
-  adminApiKey: Admin API Key
-  indexName: hexo_github
+  applicationID: 'applicationID'
+  apiKey: 'Search-Only API Key(第一个创建的key)'
+  adminApiKey: 'Admin API Key'
+  indexName: 'index_name'
   chunkSize: 5000
 ```
 
@@ -142,8 +147,60 @@ algolia_search:
     hits_stats: "${hits} results found in ${time} ms"
 ```
 
+### 优化
+
+按照上面的步骤配置完成之后，发现搜索仅能搜索标题而不能搜索文章内的内容，为了可以支持内容搜索，需要**更换**插件：将`hexo-algolia`更换为`hexo-algoliasearch`。
+
+下面仅仅说一下和`hexo-algolia`不一样的地方。
+
+1. 安装插件
+
+   ```shell
+   # npm install hexo-algoliasearch --save
+   ```
+
+2. 根目录配置文件`_config.yml`
+
+   ```yaml
+   algolia:
+     applicationID: 'applicationID'
+     apiKey: 'Search-Only API Key(第一个创建的key)'
+     adminApiKey: 'Admin API Key'
+     indexName: 'index_name'
+     chunkSize: 5000
+     fields:
+       - content:strip:truncate,0,500
+       - excerpt:strip
+       - gallery
+       - permalink
+       - photos
+       - slug
+       - tags
+       - title
+   ```
+
+   **重点注意：**
+
+   有的教程（即使官方插件教程）会让你将`applicationID`改为`appId`，此处先不更改，关于此处的两个问题：
+
+   - `fn = function () { throw arg; };`，这种应该是找不到`applicationID`或`appId`，注意配置。
+   - 页面报错`Algolia Settings are invalid`，会定位到文件`source/js/src/algolia.js`中，看到变量由`applicationID`、`apiKey`、`indexName`组成，说明配置中找不到其中的某些变量。要注意看一下目录`node_modules`中插件的具体用的是`applicationID`还是`appId`（error happen 再看），一定要统一。
+
+   如果没有配置`fields`选项，`hexo algolia`会报错`TypeError: Cannot read property 'filter' of undefined`。
+
+3. 更新Index
+
+   ```shell
+   # export HEXO_ALGOLIA_INDEXING_KEY='Search-Only API key' or 'INDEXING API KEY'
+   # hexo algolia
+   ```
+
+现在再部署页面，就会发现搜索完全可以搜索到文章内部。
+
 ## 优秀资料
 
 [next主题配置之Algolia](http://theme-next.iissnan.com/third-party-services.html#algolia-search)
 
 [Algolia一直出错](https://github.com/iissnan/theme-next-docs/issues/162)
+
+[hexo-algoliasearch](https://github.com/LouisBarranqueiro/hexo-algoliasearch#hexo-algoliasearch)
