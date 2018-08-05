@@ -229,6 +229,10 @@ static int process_backlog(struct napi_struct *napi, int quota)
 		struct sk_buff *skb;
 		unsigned int qlen;
 		/*处理队列不为空，则继续；第一次为空*/
+         /*数据包到来时首先填充input_pkt_queue，而在处理时从process_queue中取，
+         因此首次处理process_queue必定为空。
+         如果input_pkt_queue不为空，则把其中的数据包迁移到process_queue中，然后继续处理，减少锁冲突。
+         */
 		while ((skb = __skb_dequeue(&sd->process_queue))) {
 			rcu_read_lock();
 			local_irq_enable();
