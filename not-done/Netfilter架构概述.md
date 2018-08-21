@@ -386,7 +386,7 @@ Netfilter是内核的一种网络架构，而`iptables`是`netfilter`的用户�
 
 可见`iptables`作为模块存于kernel中，而模块`ip_tables`作为基础模块由其他五个模块（kernel version不同，可能缺少`iptable_security`，模块命名方式：iptables_表名）引用。
 
-模块`ip_tabls`为承接模块，承接user/kernel的信息交互。而其他五个模块主要提供不同的（iptables 表）类型到`nf_hooks`的映射。
+其中模块`ip_tabls`为承接模块，承接user/kernel的信息交互。而其他五个模块主要提供不同的（iptables 表）类型到`nf_hooks`的映射。
 
 ## 模块间的交互
 
@@ -446,10 +446,6 @@ int register_pernet_subsys(struct pernet_operations *ops)
 
 
 ### xt_hook_link
-
-
-
-
 
 iptables 和 内核数据结构进行关联 xt_hook_link (iptables_filter)
 
