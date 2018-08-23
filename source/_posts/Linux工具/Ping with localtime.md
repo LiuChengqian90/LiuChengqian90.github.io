@@ -67,7 +67,7 @@ PING baidu.com (220.181.57.216) 56(84) bytes of data.
 如果显示ISO8601时间格式
 
 ```shell
-# # ping baidu.com | perl -nle 'use Time::Piece; BEGIN {$|++} print localtime->datetime, " ", $_'
+# ping baidu.com | perl -nle 'use Time::Piece; BEGIN {$|++} print localtime->datetime, " ", $_'
 ```
 
 **Notice：**报错“Can't locate Time/Piece.pm in @INC”，需要执行命令“yum -y install perl-Time-Piece”来进行必要包的安装。
