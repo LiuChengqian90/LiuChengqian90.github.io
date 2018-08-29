@@ -440,8 +440,80 @@ int register_pernet_subsys(struct pernet_operations *ops)
 	return error;
 }
 --->>>
-
+static int register_pernet_operations(struct list_head *list,
+				      struct pernet_operations *ops)
+{
+    /*ida相关操作直接跳过*/
+	…………
+	error = __register_pernet_operations(list, ops);
+    …………
+}
+--->>>
+static int __register_pernet_operations(struct list_head *list,
+					struct pernet_operations *ops)
+{
+	struct net *net;
+	int error;
+	LIST_HEAD(net_exit_list);
+    /*新的操作挂到全局链并在每个网络命名空间执行init函数*/
+	list_add_tail(&ops->list, list);
+	if (ops->init || (ops->id && ops->size)) {
+		for_each_net(net) {
+			error = ops_init(ops, net);
+			if (error)
+				goto out_undo;
+			list_add_tail(&net->exit_list, &net_exit_list);
+		}
+	}
+	return 0;
+    …………
+}
 ```
+
+因此，再来看一下`iptables_filter`模块的init函数内部流程，不过之前需要熟悉一下其用到的数据。
+
+```c
+#define FILTER_VALID_HOOKS ((1 << NF_INET_LOCAL_IN) | \
+			    (1 << NF_INET_FORWARD) | \
+			    (1 << NF_INET_LOCAL_OUT))
+/*
+xt_table 类型实体，其中name是唯一标识。
+valid_hooks 可以与上面的netfilter分析对应，表示对应的可用netfilter chain。
+af则是对应netfilter 的 netfilter protocol,PF。
+*/
+static const struct xt_table packet_filter = {
+	.name		= "filter",
+	.valid_hooks	= FILTER_VALID_HOOKS,
+	.me		= THIS_MODULE,
+	.af		= NFPROTO_IPV4,
+	.priority	= NF_IP_PRI_FILTER,
+};
+```
+
+
+
+```c
+static int __net_init iptable_filter_net_init(struct net *net)
+{
+	struct ipt_replace *repl;
+
+	repl = ipt_alloc_initial_table(&packet_filter);
+	if (repl == NULL)
+		return -ENOMEM;
+	/* Entry 1 is the FORWARD hook */
+	((struct ipt_standard *)repl->entries)[1].target.verdict =
+		forward ? -NF_ACCEPT - 1 : -NF_DROP - 1;
+
+	net->ipv4.iptable_filter =
+		ipt_register_table(net, &packet_filter, repl);
+	kfree(repl);
+	return PTR_RET(net->ipv4.iptable_filter);
+}
+```
+
+
+
+
 
 
 
