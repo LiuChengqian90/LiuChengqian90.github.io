@@ -7,6 +7,10 @@ tags:
   - netfilter
 ---
 
+阅读本文最好有内核网络源码基础。
+
+本文源码基于Linxu 3.10。
+
 # Netfilter
 
 Netfilter是Linux 2.4.x引入的一个子系统，提供一整套的hook函数的管理机制，使得诸如数据包过滤、网络地址转换(NAT)和基于协议类型的连接跟踪成为了可能。
@@ -490,20 +494,21 @@ static const struct xt_table packet_filter = {
 };
 ```
 
-
+正式开始分析初始化函数
 
 ```c
 static int __net_init iptable_filter_net_init(struct net *net)
 {
 	struct ipt_replace *repl;
-
+	//第一步
 	repl = ipt_alloc_initial_table(&packet_filter);
 	if (repl == NULL)
 		return -ENOMEM;
+   	//第二步
 	/* Entry 1 is the FORWARD hook */
 	((struct ipt_standard *)repl->entries)[1].target.verdict =
 		forward ? -NF_ACCEPT - 1 : -NF_DROP - 1;
-
+	//第三步
 	net->ipv4.iptable_filter =
 		ipt_register_table(net, &packet_filter, repl);
 	kfree(repl);
@@ -511,7 +516,329 @@ static int __net_init iptable_filter_net_init(struct net *net)
 }
 ```
 
+第一步：
 
+```c
+void *ipt_alloc_initial_table(const struct xt_table *info)
+{
+	return xt_alloc_initial_table(ipt, IPT);
+}
+//xt_alloc_initial_table 是一个宏，原型可查看源码，对这个函数进行整理如下
+########################################################
+void *ipt_alloc_initial_table(const struct xt_table *info)
+{
+	unsigned int hook_mask = info->valid_hooks;
+	//统计给定数字中值为1的bit位个数
+    //比较有意思的操作，可自己分析一下其实现原理
+	unsigned int nhooks = hweight32(hook_mask);
+	unsigned int bytes = 0, hooknum = 0, i = 0;
+    /*
+	ipt_replace 定义在 include\uapi\linux\netfilter_ipv4\ip_tables.h
+	ipt_standard/ipt_error 定义在 include\linux\netfilter_ipv4\ip_tables.h	
+    */
+	struct {
+		struct ipt_replace repl;
+	    struct ipt_standard entries[nhooks];
+	    struct ipt_error term;
+	} *tbl = kzalloc(sizeof(*tbl), GFP_KERNEL);
+
+	if (tbl == NULL)
+		return NULL;
+    //唯一标识赋值
+	strncpy(tbl->repl.name, info->name, sizeof(tbl->repl.name));
+	tbl->term = (struct ipt_error)IPT_ERROR_INIT;
+	tbl->repl.valid_hooks = hook_mask;
+	tbl->repl.num_entries = nhooks + 1;
+	tbl->repl.size = nhooks * sizeof(struct ipt_standard) + sizeof(struct ipt_error);
+    //根据info中的hooks 对tbl进行初始化，之后return
+    /*
+    info valid_hooks置位了 local_in forward local_out，因此entries仅有3个下标
+    且每个下标依次代表 local_in forward local_out
+    */
+	for (; hook_mask != 0; hook_mask >>= 1, ++hooknum) {
+		if (!(hook_mask & 1))
+			continue;
+		tbl->repl.hook_entry[hooknum] = bytes;
+		tbl->repl.underflow[hooknum]  = bytes;
+		tbl->entries[i++] = (struct ipt_standard)
+			IPT_STANDARD_INIT(NF_ACCEPT);
+		bytes += sizeof(struct ipt_standard);
+	}
+	return tbl;
+}
+//分析一下 IPT_STANDARD_INIT 实现
+--->>>
+#define IPT_STANDARD_INIT(__verdict)					       \
+{									       \
+	.entry		= IPT_ENTRY_INIT(sizeof(struct ipt_standard)),	       \
+	.target		= XT_TARGET_INIT(XT_STANDARD_TARGET,		       \
+					 sizeof(struct xt_standard_target)),   \
+	.target.verdict	= -(__verdict) - 1,				       \
+}
+/*
+即 初始化 ipt_standard结构体;
+#define IPT_ENTRY_INIT(__size)
+{//通过 struct ipt_standard内部结构可明确为什么target_offset需要初始化为这个值
+	.target_offset	= sizeof(struct ipt_entry),
+	.next_offset	= (__size),
+}
+#define XT_TARGET_INIT(__name, __size)
+{
+	.target.u.user = {
+		.target_size	= XT_ALIGN(__size),
+		.name		= __name,
+	},
+}
+*/
+```
+
+第二步：
+
+```c
+/* Entry 1 is the FORWARD hook */
+/*forward 为全局变量，标识设备是否支持转发*/
+((struct ipt_standard *)repl->entries)[1].target.verdict =
+	forward ? -NF_ACCEPT - 1 : -NF_DROP - 1;
+```
+
+第三步：
+
+可直接跳到 第四步。
+
+```c
+net->ipv4.iptable_filter =
+		ipt_register_table(net, &packet_filter, repl);
+--->>>
+struct xt_table *ipt_register_table(struct net *net,
+				    const struct xt_table *table,
+				    const struct ipt_replace *repl)
+{
+	int ret;
+	struct xt_table_info *newinfo;
+	struct xt_table_info bootstrap = {0};
+	void *loc_cpu_entry;
+	struct xt_table *new_table;
+	//第四步
+	newinfo = xt_alloc_table_info(repl->size);
+	if (!newinfo) {
+		ret = -ENOMEM;
+		goto out;
+	}
+	/* choose the copy on our node/cpu, but dont care about preemption */
+    /* 
+    初始化本地 entries，并将loc_cpu_entry作为传参调用translate_table，
+    这块需要强调一下，因为translate_table内部需要。
+    */
+	loc_cpu_entry = newinfo->entries[raw_smp_processor_id()];
+	memcpy(loc_cpu_entry, repl->entries, repl->size);
+	//第五步
+	ret = translate_table(net, newinfo, loc_cpu_entry, repl);
+	if (ret != 0)
+		goto out_free;
+	//第六步
+	new_table = xt_register_table(net, table, &bootstrap, newinfo);
+	if (IS_ERR(new_table)) {
+		ret = PTR_ERR(new_table);
+		goto out_free;
+	}
+	return new_table;
+out_free:
+	xt_free_table_info(newinfo);
+out:
+	return ERR_PTR(ret);
+}
+```
+
+第四步：
+
+```C
+struct xt_table_info *xt_alloc_table_info(unsigned int size)
+{
+	struct xt_table_info *newinfo;
+	int cpu;
+	/* Pedantry: prevent them from hitting BUG() in vmalloc.c --RR */
+    /*
+    size 按page对齐，偏移得到页数。2 应该为 中段栈页数。如果大于可用页，直接返回。
+    */
+	if ((SMP_ALIGN(size) >> PAGE_SHIFT) + 2 > totalram_pages)
+		return NULL;
+	/*
+	#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+	#define XT_TABLE_INFO_SZ (offsetof(struct xt_table_info, entries) \
+			  + nr_cpu_ids * sizeof(char *))
+	offsetof 为结构体的某个值在结构体内的偏移。			  
+	entries 在结构体内部为弹性数组指针，其长度取决于系统cpu个数。
+	*/
+	newinfo = kzalloc(XT_TABLE_INFO_SZ, GFP_KERNEL);
+	if (!newinfo)
+		return NULL;
+	newinfo->size = size;
+	for_each_possible_cpu(cpu) {
+        //size 小于一页则直接分配物理内存，大于则分配虚拟内存。
+		if (size <= PAGE_SIZE)
+			newinfo->entries[cpu] = kmalloc_node(size,
+							GFP_KERNEL,
+							cpu_to_node(cpu));
+		else
+			newinfo->entries[cpu] = vmalloc_node(size,
+							cpu_to_node(cpu));
+		//有一个分配失败，则释放全部已经分配的内存
+		if (newinfo->entries[cpu] == NULL) {
+			xt_free_table_info(newinfo);
+			return NULL;
+		}
+	}
+	return newinfo;
+}
+```
+
+第五步：
+
+```C
+/*entry0 为当前cpu表项*/
+static int
+translate_table(struct net *net, struct xt_table_info *newinfo, void *entry0,
+                const struct ipt_replace *repl)
+{
+	struct ipt_entry *iter;
+	unsigned int i;
+	int ret = 0;
+
+	newinfo->size = repl->size;
+	newinfo->number = repl->num_entries;
+	/* Init all hooks to impossible value. */
+	for (i = 0; i < NF_INET_NUMHOOKS; i++) {
+		newinfo->hook_entry[i] = 0xFFFFFFFF;
+		newinfo->underflow[i] = 0xFFFFFFFF;
+	}
+	duprintf("translate_table: size %u\n", newinfo->size);
+	i = 0;
+	/* Walk through entries, checking offsets. */
+	xt_entry_foreach(iter, entry0, newinfo->size) {
+        //检查一些内存、指针相关数据
+		ret = check_entry_size_and_hooks(iter, newinfo, entry0,
+						 entry0 + repl->size,
+						 repl->hook_entry,
+						 repl->underflow,
+						 repl->valid_hooks);
+		if (ret != 0)
+			return ret;
+		++i;
+		if (strcmp(ipt_get_target(iter)->u.user.name,
+		    XT_ERROR_TARGET) == 0)
+			++newinfo->stacksize;
+	}
+	//某些表项缺失
+	if (i != repl->num_entries) {
+		duprintf("translate_table: %u not %u entries\n",
+			 i, repl->num_entries);
+		return -EINVAL;
+	}
+
+	/* Check hooks all assigned */
+    /* 依据valid_hooks 进行判断，如果 hook_entry 或 underflow为初始值，则直接报错。
+    这两个值 在 xt_alloc_initial_table中初始化
+    */
+	for (i = 0; i < NF_INET_NUMHOOKS; i++) {
+		/* Only hooks which are valid */
+		if (!(repl->valid_hooks & (1 << i)))
+			continue;
+		if (newinfo->hook_entry[i] == 0xFFFFFFFF) {
+			duprintf("Invalid hook entry %u %u\n",
+				 i, repl->hook_entry[i]);
+			return -EINVAL;
+		}
+		if (newinfo->underflow[i] == 0xFFFFFFFF) {
+			duprintf("Invalid underflow %u %u\n",
+				 i, repl->underflow[i]);
+			return -EINVAL;
+		}
+	}
+	//TBD
+	if (!mark_source_chains(newinfo, repl->valid_hooks, entry0))
+		return -ELOOP;
+
+	/* Finally, each sanity check must pass */
+	i = 0;
+	xt_entry_foreach(iter, entry0, newinfo->size) {
+		ret = find_check_entry(iter, net, repl->name, repl->size);
+		if (ret != 0)
+			break;
+		++i;
+	}
+
+	if (ret != 0) {
+		xt_entry_foreach(iter, entry0, newinfo->size) {
+			if (i-- == 0)
+				break;
+			cleanup_entry(iter, net);
+		}
+		return ret;
+	}
+	/* And one copy for every other CPU */
+	for_each_possible_cpu(i) {
+		if (newinfo->entries[i] && newinfo->entries[i] != entry0)
+			memcpy(newinfo->entries[i], entry0, newinfo->size);
+	}
+	return ret;
+}
+```
+
+第六步：
+
+```C
+struct xt_table *xt_register_table(struct net *net,
+				   const struct xt_table *input_table,
+				   struct xt_table_info *bootstrap,
+				   struct xt_table_info *newinfo)
+{
+	int ret;
+	struct xt_table_info *private;
+	struct xt_table *t, *table;
+
+	/* Don't add one object to multiple lists. */
+	table = kmemdup(input_table, sizeof(struct xt_table), GFP_KERNEL);
+	if (!table) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	ret = mutex_lock_interruptible(&xt[table->af].mutex);
+	if (ret != 0)
+		goto out_free;
+
+	/* Don't autoload: we'd eat our tail... */
+	list_for_each_entry(t, &net->xt.tables[table->af], list) {
+		if (strcmp(t->name, table->name) == 0) {
+			ret = -EEXIST;
+			goto unlock;
+		}
+	}
+
+	/* Simplifies replace_table code. */
+	table->private = bootstrap;
+
+	if (!xt_replace_table(table, 0, newinfo, &ret))
+		goto unlock;
+
+	private = table->private;
+	pr_debug("table->private->number = %u\n", private->number);
+
+	/* save number of initial entries */
+	private->initial_entries = private->number;
+
+	list_add(&table->list, &net->xt.tables[table->af]);
+	mutex_unlock(&xt[table->af].mutex);
+	return table;
+
+ unlock:
+	mutex_unlock(&xt[table->af].mutex);
+out_free:
+	kfree(table);
+out:
+	return ERR_PTR(ret);
+}
+```
 
 
 
