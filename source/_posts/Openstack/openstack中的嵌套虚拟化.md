@@ -1,9 +1,9 @@
 ---
-title: openstack中的嵌套虚拟化
+title: OpenStack中的嵌套虚拟化
 date: 2017-12-18 11:16:22
-categories: openstack
+categories: OpenStack
 tags:
-  - openstack
+  - OpenStack
   - 嵌套虚拟化
 ---
 
