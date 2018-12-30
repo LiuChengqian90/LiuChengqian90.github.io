@@ -1,9 +1,9 @@
 ---
-title: openstack镜像导出
+title: OpenStack镜像导出
 date: 2017-11-09 14:48:42
-categories: openstack
+categories: OpenStack
 tags:
-  - openstack
+  - OpenStack
   - 镜像
 ---
 

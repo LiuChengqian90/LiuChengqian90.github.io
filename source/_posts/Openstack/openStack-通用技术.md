@@ -1,9 +1,9 @@
 ---
-title: openStack 通用技术
+title: OpenStack通用技术
 date: 2018-04-13 11:44:09
-categories: openstack
+categories: OpenStack
 tags:
-  - openstack
+  - OpenStack
 ---
 
 摘自 《OpenStack设计与实现》第四章。
@@ -916,7 +916,7 @@ conmmon_opts = [
 - 用其他模块中已经注册过的配置选项
 
     对于已经注册过的配置选项，开发者可以直接访问：
-    	
+    ​	
     ```python
     from oslo.config import cfg
     import service

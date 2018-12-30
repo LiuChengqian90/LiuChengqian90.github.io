@@ -1,9 +1,9 @@
 ---
-title: openstack镜像制作
+title: OpenStack镜像制作
 date: 2017-11-09 14:48:37
-categories: openstack
+categories: OpenStack
 tags:
-  - openstack
+  - OpenStack
   - 镜像
 ---
 
