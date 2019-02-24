@@ -47,7 +47,7 @@ OpenStack 应用了一个代码评审过程来保证代码质量。
 ```shell
 # yum install -y python-devel python34-devel python-pip
 # pip install tox
-# yum install -y python36   // for tox -e py36
+# yum install -y python36 python36-pip python36-devel // for tox -e py36
 ```
 
 ### git 配置
