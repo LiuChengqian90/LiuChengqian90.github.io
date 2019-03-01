@@ -1,0 +1,65 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/bin/node',
+1 verbose cli   '/usr/bin/npm',
+1 verbose cli   'install',
+1 verbose cli   'gulp-htmlclean',
+1 verbose cli   '--save' ]
+2 info using npm@3.10.10
+3 info using node@v6.14.3
+4 silly loadCurrentTree Starting
+5 silly install loadCurrentTree
+6 silly install readLocalPackageData
+7 silly fetchPackageMetaData gulp-htmlclean
+8 silly fetchNamedPackageData gulp-htmlclean
+9 silly mapToRegistry name gulp-htmlclean
+10 silly mapToRegistry using default registry
+11 silly mapToRegistry registry https://registry.npmjs.org/
+12 silly mapToRegistry data Result {
+12 silly mapToRegistry   raw: 'gulp-htmlclean',
+12 silly mapToRegistry   scope: null,
+12 silly mapToRegistry   escapedName: 'gulp-htmlclean',
+12 silly mapToRegistry   name: 'gulp-htmlclean',
+12 silly mapToRegistry   rawSpec: '',
+12 silly mapToRegistry   spec: 'latest',
+12 silly mapToRegistry   type: 'tag' }
+13 silly mapToRegistry uri https://registry.npmjs.org/gulp-htmlclean
+14 verbose request uri https://registry.npmjs.org/gulp-htmlclean
+15 verbose request no auth needed
+16 info attempt registry request try #1 at 6:00:57 AM
+17 verbose request id 530cdf27e68edb3f
+18 http request GET https://registry.npmjs.org/gulp-htmlclean
+19 info retry will retry, error on last attempt: Error: read ECONNRESET
+20 info attempt registry request try #2 at 6:04:00 AM
+21 http request GET https://registry.npmjs.org/gulp-htmlclean
+22 info retry will retry, error on last attempt: Error: connect ECONNREFUSED 104.16.27.35:443
+23 info attempt registry request try #3 at 6:05:23 AM
+24 http request GET https://registry.npmjs.org/gulp-htmlclean
+25 silly fetchPackageMetaData Error: read ECONNRESET
+25 silly fetchPackageMetaData     at exports._errnoException (util.js:1020:11)
+25 silly fetchPackageMetaData     at TLSWrap.onread (net.js:580:26)
+25 silly fetchPackageMetaData  error for gulp-htmlclean { Error: read ECONNRESET
+25 silly fetchPackageMetaData     at exports._errnoException (util.js:1020:11)
+25 silly fetchPackageMetaData     at TLSWrap.onread (net.js:580:26) code: 'ECONNRESET', errno: 'ECONNRESET', syscall: 'read' }
+26 silly rollbackFailedOptional Starting
+27 silly rollbackFailedOptional Finishing
+28 silly runTopLevelLifecycles Finishing
+29 silly install printInstalled
+30 verbose stack Error: read ECONNRESET
+30 verbose stack     at exports._errnoException (util.js:1020:11)
+30 verbose stack     at TLSWrap.onread (net.js:580:26)
+31 verbose cwd /work/hexo/LiuChengqian90.github.io
+32 error Linux 3.10.0-862.6.3.el7.x86_64
+33 error argv "/usr/bin/node" "/usr/bin/npm" "install" "gulp-htmlclean" "--save"
+34 error node v6.14.3
+35 error npm  v3.10.10
+36 error code ECONNRESET
+37 error errno ECONNRESET
+38 error syscall read
+39 error network read ECONNRESET
+40 error network This is most likely not a problem with npm itself
+40 error network and is related to network connectivity.
+40 error network In most cases you are behind a proxy or have bad network settings.
+40 error network
+40 error network If you are behind a proxy, please make sure that the
+40 error network 'proxy' config is set properly.  See: 'npm help config'
+41 verbose exit [ 1, true ]
