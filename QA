@@ -33,4 +33,10 @@ Maybe response is "hexo is not definded",then you should:
 $ cd node_modules/hexo-generator-baidu-sitemap/
 $ npm install
 
-
+npm install gulp --save
+npm install gulp -g
+npm install gulp-minify-css --save
+npm install gulp-uglify --save
+npm install gulp-htmlmin --save
+npm install gulp-htmlclean --save
+https://blog.csdn.net/peihaozhu/article/details/51084057
