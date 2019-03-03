@@ -36,3 +36,10 @@ Centos 安装 npm
 参考资料：
 
 [知乎参考](https://www.zhihu.com/question/21193762)
+
+
+
+hexo clean
+hexo g
+gulp       
+hexo d
