@@ -802,7 +802,7 @@ rating:
 # Show number of visitors to each article.
 # You can visit https://leancloud.cn to get AppID and AppKey.
 leancloud_visitors:
-  enable: true
+  enable: false
   app_id: OxuGm1sftgvx1pybK4fNvWEI-gzGzoHsz
   app_key: wVNroDGKbkHDfo8jS43cWkzo
   # Dependencies: https://github.com/theme-next/hexo-leancloud-counter-security
@@ -826,11 +826,11 @@ firestore:
 busuanzi_count:
   enable: true
   total_visitors: true
-  total_visitors_icon: <i class="fa fa-user"></i> 访问人数
+  total_visitors_icon: user
   total_views: true
-  total_views_icon: <i class="fa fa-eye"></i> 总访问量
+  total_views_icon: eye
   post_views: true
-  post_views_icon: <i class="fa fa-file-o"></i> 浏览
+  post_views_icon: eye
 
 # Tencent analytics ID
 #tencent_analytics:
