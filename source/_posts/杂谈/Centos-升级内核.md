@@ -347,3 +347,5 @@ saved_entry=CentOS Linux (3.10.0-514.26.2.el7.x86_64) 7 (Core)
 [CentOS Linux 升级内核步骤、方法](https://linux.cn/article-296-1-rel.html)
 
 [安全删除linux旧内核的方法](http://blog.csdn.net/caryaliu/article/details/7038377)
+
+[KernelBuild](https://kernelnewbies.org/KernelBuild)
