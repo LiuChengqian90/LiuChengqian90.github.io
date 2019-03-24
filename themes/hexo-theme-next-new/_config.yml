@@ -826,11 +826,11 @@ firestore:
 busuanzi_count:
   enable: true
   total_visitors: true
-  total_visitors_icon: user
+  total_visitors_icon: <i class="fa fa-user"></i> 访问人数
   total_views: true
-  total_views_icon: eye
+  total_views_icon: <i class="fa fa-eye"></i> 总访问量
   post_views: true
-  post_views_icon: eye
+  post_views_icon: <i class="fa fa-file-o"></i> 浏览
 
 # Tencent analytics ID
 #tencent_analytics:
