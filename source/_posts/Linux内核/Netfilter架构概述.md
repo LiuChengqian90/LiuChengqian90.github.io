@@ -326,41 +326,7 @@ static struct nf_hook_ops br_nf_ops[] __read_mostly = {
 		.hooknum = NF_BR_LOCAL_IN,
 		.priority = NF_BR_PRI_BRNF,
 	},
-	{
-		.hook = br_nf_forward_ip,
-		.owner = THIS_MODULE,
-		.pf = NFPROTO_BRIDGE,
-		.hooknum = NF_BR_FORWARD,
-		.priority = NF_BR_PRI_BRNF - 1,
-	},
-	{
-		.hook = br_nf_forward_arp,
-		.owner = THIS_MODULE,
-		.pf = NFPROTO_BRIDGE,
-		.hooknum = NF_BR_FORWARD,
-		.priority = NF_BR_PRI_BRNF,
-	},
-	{
-		.hook = br_nf_post_routing,
-		.owner = THIS_MODULE,
-		.pf = NFPROTO_BRIDGE,
-		.hooknum = NF_BR_POST_ROUTING,
-		.priority = NF_BR_PRI_LAST,
-	},
-	{
-		.hook = ip_sabotage_in,
-		.owner = THIS_MODULE,
-		.pf = NFPROTO_IPV4,
-		.hooknum = NF_INET_PRE_ROUTING,
-		.priority = NF_IP_PRI_FIRST,
-	},
-	{
-		.hook = ip_sabotage_in,
-		.owner = THIS_MODULE,
-		.pf = NFPROTO_IPV6,
-		.hooknum = NF_INET_PRE_ROUTING,
-		.priority = NF_IP6_PRI_FIRST,
-	},
+    …………
 };
 ```
 
@@ -403,7 +369,6 @@ static int __init iptable_filter_init(void)
 	ret = register_pernet_subsys(&iptable_filter_net_ops);
 	if (ret < 0)
 		return ret;
-
 	/* Register hooks */
 	filter_ops = xt_hook_link(&packet_filter, iptable_filter_hook);
 	if (IS_ERR(filter_ops)) {
@@ -930,8 +895,6 @@ iptable_filter_hook(unsigned int hook, struct sk_buff *skb,
 }
 ```
 
-
-
 ## 模块内的交互
 
 所有关于netfilter的user-kernel交互，注册都在iptabls模块。
@@ -939,15 +902,11 @@ iptable_filter_hook(unsigned int hook, struct sk_buff *skb,
 ```c
 ret = nf_register_sockopt(&ipt_sockopts);
 -->>
-//其set指针为
+//其set指针为do_ipt_set_ctl
 static int
 do_ipt_set_ctl(struct sock *sk, int cmd, void __user *user, unsigned int len)
 {
-	int ret;
-
-	if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN))
-		return -EPERM;
-
+	……
 	switch (cmd) {
 	case IPT_SO_SET_REPLACE:
 		ret = do_replace(sock_net(sk), user, len);
@@ -1034,7 +993,6 @@ __do_replace(struct net *net, const char *name, unsigned int valid_hooks,
 		goto put_module;
 	}
 	//newinfo直接替换t->private
-    //
 	oldinfo = xt_replace_table(t, num_counters, newinfo, &ret);
 	if (!oldinfo)
 		goto put_module;
@@ -1042,14 +1000,10 @@ __do_replace(struct net *net, const char *name, unsigned int valid_hooks,
 }
 ```
 
+可以简单理解为：
 
-
-```shell
-内核每个命名空间注册时：nf_hooks 与 net->ipv4.iptable_filter 做关联，iptable_filter 与 xt.tables 做关联
-用户态进行更新时：更新相应的xt.tables
-```
-
-
+**内核每个命名空间注册时：nf_hooks 与 net->ipv4.iptable_filter 做关联，iptable_filter 与 xt.tables 做关联**
+**用户态进行更新时：更新相应的xt.tables**
 
 # 优秀资料
 
@@ -1057,4 +1011,4 @@ __do_replace(struct net *net, const char *name, unsigned int valid_hooks,
 
 [Linux 防火墙在内核中的实现](https://www.ibm.com/developerworks/cn/linux/network/l-netip/index.html)
 
-[netfilter/iptables 简介](netfilter/iptables 简介)
+[netfilter/iptables 简介](<https://www.cnblogs.com/sparkdev/p/9328713.html>)
