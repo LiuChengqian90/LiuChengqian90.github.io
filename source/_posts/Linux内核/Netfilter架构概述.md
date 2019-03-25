@@ -103,7 +103,6 @@ int nf_hook_slow(u_int8_t pf, unsigned int hook, struct sk_buff *skb,
 	int ret = 0;
 	/* We may already have this, but read-locks nest anyway */
 	rcu_read_lock();
-
     /*
     struct list_head nf_hooks[NFPROTO_NUMPROTO][NF_MAX_HOOKS];
     nf_hooks 是一个二维链表头：
@@ -115,6 +114,8 @@ int nf_hook_slow(u_int8_t pf, unsigned int hook, struct sk_buff *skb,
 next_hook:
 	verdict = nf_iterate(&nf_hooks[pf][hook], skb, hook, indev,
 			     outdev, &elem, okfn, hook_thresh);
+    /*根据返回值执行不同的动作：接收、丢包或继续check*/
+    …………
 	if (verdict == NF_ACCEPT || verdict == NF_STOP) {
 		ret = 1;
 	} else if ((verdict & NF_VERDICT_MASK) == NF_DROP) {
@@ -282,11 +283,7 @@ int nf_register_hooks(struct nf_hook_ops *reg, unsigned int n)
 			goto err;
 	}
 	return err;
-
-err:
-	if (i > 0)
-		nf_unregister_hooks(reg, i);
-	return err;
+    ……
 }
 --->>>
 int nf_register_hook(struct nf_hook_ops *reg)
@@ -657,9 +654,7 @@ struct xt_table_info *xt_alloc_table_info(unsigned int size)
 	struct xt_table_info *newinfo;
 	int cpu;
 	/* Pedantry: prevent them from hitting BUG() in vmalloc.c --RR */
-    /*
-    size 按page对齐，偏移得到页数。2 应该为 中段栈页数。如果大于可用页，直接返回。
-    */
+    /* size 按page对齐，偏移得到页数。2 应该为 中段栈页数。如果大于可用页，直接返回。*/
 	if ((SMP_ALIGN(size) >> PAGE_SHIFT) + 2 > totalram_pages)
 		return NULL;
 	/*
@@ -696,6 +691,7 @@ struct xt_table_info *xt_alloc_table_info(unsigned int size)
 
 ```C
 /*entry0 为当前cpu表项*/
+/*可将此函数简单理解为，entry0复制到newinfo的每个entries*/
 static int
 translate_table(struct net *net, struct xt_table_info *newinfo, void *entry0,
                 const struct ipt_replace *repl)
@@ -734,7 +730,6 @@ translate_table(struct net *net, struct xt_table_info *newinfo, void *entry0,
 			 i, repl->num_entries);
 		return -EINVAL;
 	}
-
 	/* Check hooks all assigned */
     /* 依据valid_hooks 进行判断，如果 hook_entry 或 underflow为初始值，则直接报错。
     这两个值 在 xt_alloc_initial_table中初始化
@@ -787,6 +782,8 @@ translate_table(struct net *net, struct xt_table_info *newinfo, void *entry0,
 第六步：
 
 ```C
+//将table挂到net下的xt.tables，并返回table
+//于此处，与xt.tables建立的关系
 struct xt_table *xt_register_table(struct net *net,
 				   const struct xt_table *input_table,
 				   struct xt_table_info *bootstrap,
@@ -795,7 +792,6 @@ struct xt_table *xt_register_table(struct net *net,
 	int ret;
 	struct xt_table_info *private;
 	struct xt_table *t, *table;
-
 	/* Don't add one object to multiple lists. */
 	table = kmemdup(input_table, sizeof(struct xt_table), GFP_KERNEL);
 	if (!table) {
@@ -806,7 +802,6 @@ struct xt_table *xt_register_table(struct net *net,
 	ret = mutex_lock_interruptible(&xt[table->af].mutex);
 	if (ret != 0)
 		goto out_free;
-
 	/* Don't autoload: we'd eat our tail... */
 	list_for_each_entry(t, &net->xt.tables[table->af], list) {
 		if (strcmp(t->name, table->name) == 0) {
@@ -814,7 +809,6 @@ struct xt_table *xt_register_table(struct net *net,
 			goto unlock;
 		}
 	}
-
 	/* Simplifies replace_table code. */
 	table->private = bootstrap;
 
@@ -823,7 +817,6 @@ struct xt_table *xt_register_table(struct net *net,
 
 	private = table->private;
 	pr_debug("table->private->number = %u\n", private->number);
-
 	/* save number of initial entries */
 	private->initial_entries = private->number;
 
@@ -840,23 +833,221 @@ out:
 }
 ```
 
-
-
-
-
 ### xt_hook_link
 
-iptables 和 内核数据结构进行关联 xt_hook_link (iptables_filter)
+iptables 和 内核数据结构进行关联
+
+```c
+filter_ops = xt_hook_link(&packet_filter, iptable_filter_hook);
+-->>
+/*进行必要数据初始化*/
+struct nf_hook_ops *xt_hook_link(const struct xt_table *table, nf_hookfn *fn)
+{
+	unsigned int hook_mask = table->valid_hooks;
+	uint8_t i, num_hooks = hweight32(hook_mask);
+	uint8_t hooknum;
+	struct nf_hook_ops *ops;
+	int ret;
+
+	ops = kmalloc(sizeof(*ops) * num_hooks, GFP_KERNEL);
+	if (ops == NULL)
+		return ERR_PTR(-ENOMEM);
+
+	for (i = 0, hooknum = 0; i < num_hooks && hook_mask != 0;
+	     hook_mask >>= 1, ++hooknum) {
+		if (!(hook_mask & 1))
+			continue;
+		ops[i].hook     = fn;
+		ops[i].owner    = table->me;
+		ops[i].pf       = table->af;
+		ops[i].hooknum  = hooknum;
+		ops[i].priority = table->priority;
+		++i;
+	}
+
+	ret = nf_register_hooks(ops, num_hooks);
+	if (ret < 0) {
+		kfree(ops);
+		return ERR_PTR(ret);
+	}
+
+	return ops;
+}
+-->>
+int nf_register_hooks(struct nf_hook_ops *reg, unsigned int n)
+{
+	unsigned int i;
+	int err = 0;
+
+	for (i = 0; i < n; i++) {
+		err = nf_register_hook(&reg[i]);
+		if (err)
+			goto err;
+	}
+	return err;
+    ……
+}
+-->>
+int nf_register_hook(struct nf_hook_ops *reg)
+{
+	struct nf_hook_ops *elem;
+	int err;
+
+	err = mutex_lock_interruptible(&nf_hook_mutex);
+	if (err < 0)
+		return err;
+    /*终于到了熟悉的 nf_hooks*/
+	list_for_each_entry(elem, &nf_hooks[reg->pf][reg->hooknum], list) {
+		if (reg->priority < elem->priority)
+			break;
+	}
+	list_add_rcu(&reg->list, elem->list.prev);
+	mutex_unlock(&nf_hook_mutex);
+#if defined(CONFIG_JUMP_LABEL)
+	static_key_slow_inc(&nf_hooks_needed[reg->pf][reg->hooknum]);
+#endif
+	return 0;
+}
+```
+
+```c
+static unsigned int
+iptable_filter_hook(unsigned int hook, struct sk_buff *skb,
+		    const struct net_device *in, const struct net_device *out,
+		    int (*okfn)(struct sk_buff *))
+{
+	const struct net *net;
+
+	if (hook == NF_INET_LOCAL_OUT &&
+	    (skb->len < sizeof(struct iphdr) ||
+	     ip_hdrlen(skb) < sizeof(struct iphdr)))
+		/* root is playing with raw sockets. */
+		return NF_ACCEPT;
+
+	net = dev_net((in != NULL) ? in : out);
+    //重点注意 net->ipv4.iptable_filter
+	return ipt_do_table(skb, hook, in, out, net->ipv4.iptable_filter);
+}
+```
+
+
 
 ## 模块内的交互
 
+所有关于netfilter的user-kernel交互，注册都在iptabls模块。
+
+```c
+ret = nf_register_sockopt(&ipt_sockopts);
+-->>
+//其set指针为
+static int
+do_ipt_set_ctl(struct sock *sk, int cmd, void __user *user, unsigned int len)
+{
+	int ret;
+
+	if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN))
+		return -EPERM;
+
+	switch (cmd) {
+	case IPT_SO_SET_REPLACE:
+		ret = do_replace(sock_net(sk), user, len);
+		break;
+    …………
+	}
+
+	return ret;
+}
+-->>
+static int
+do_replace(struct net *net, const void __user *user, unsigned int len)
+{
+	int ret;
+	struct ipt_replace tmp;
+	struct xt_table_info *newinfo;
+	void *loc_cpu_entry;
+	struct ipt_entry *iter;
+	// 从用户态栈复制数据
+	if (copy_from_user(&tmp, user, sizeof(tmp)) != 0)
+		return -EFAULT;
+
+	/* overflow check */
+	if (tmp.num_counters >= INT_MAX / sizeof(struct xt_counters))
+		return -ENOMEM;
+	if (tmp.num_counters == 0)
+		return -EINVAL;
+
+	tmp.name[sizeof(tmp.name)-1] = 0;
+
+	newinfo = xt_alloc_table_info(tmp.size);
+	if (!newinfo)
+		return -ENOMEM;
+
+	/* choose the copy that is on our node/cpu */
+	loc_cpu_entry = newinfo->entries[raw_smp_processor_id()];
+	if (copy_from_user(loc_cpu_entry, user + sizeof(tmp),
+			   tmp.size) != 0) {
+		ret = -EFAULT;
+		goto free_newinfo;
+	}
+    //上文已经分析
+	ret = translate_table(net, newinfo, loc_cpu_entry, &tmp);
+	if (ret != 0)
+		goto free_newinfo;
+
+	duprintf("Translated table\n");
+
+	ret = __do_replace(net, tmp.name, tmp.valid_hooks, newinfo,
+			   tmp.num_counters, tmp.counters);
+    …………
+}
+-->>
+static int
+__do_replace(struct net *net, const char *name, unsigned int valid_hooks,
+	     struct xt_table_info *newinfo, unsigned int num_counters,
+	     void __user *counters_ptr)
+{
+	int ret;
+	struct xt_table *t;
+	struct xt_table_info *oldinfo;
+	struct xt_counters *counters;
+	void *loc_cpu_old_entry;
+	struct ipt_entry *iter;
+
+	ret = 0;
+	counters = vzalloc(num_counters * sizeof(struct xt_counters));
+	if (!counters) {
+		ret = -ENOMEM;
+		goto out;
+	}
+	//找到本network namespace中的 xt.table
+	t = try_then_request_module(xt_find_table_lock(net, AF_INET, name),
+				    "iptable_%s", name);
+	if (IS_ERR_OR_NULL(t)) {
+		ret = t ? PTR_ERR(t) : -ENOENT;
+		goto free_newinfo_counters_untrans;
+	}
+	/* You lied! */
+	if (valid_hooks != t->valid_hooks) {
+		duprintf("Valid hook crap: %08X vs %08X\n",
+			 valid_hooks, t->valid_hooks);
+		ret = -EINVAL;
+		goto put_module;
+	}
+	//newinfo直接替换t->private
+    //
+	oldinfo = xt_replace_table(t, num_counters, newinfo, &ret);
+	if (!oldinfo)
+		goto put_module;
+	…………
+}
+```
 
 
 
-
-iptables user - kernel交互  do_ipt_set_ctl(ip_tables.c)
-
-
+```shell
+内核每个命名空间注册时：nf_hooks 与 net->ipv4.iptable_filter 做关联，iptable_filter 与 xt.tables 做关联
+用户态进行更新时：更新相应的xt.tables
+```
 
 
 
