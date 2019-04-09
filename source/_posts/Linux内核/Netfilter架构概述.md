@@ -15,7 +15,7 @@ tags:
 
 Netfilter是Linux 2.4.x引入的一个子系统，提供一整套的hook函数的管理机制，使得诸如数据包过滤、网络地址转换(NAT)和基于协议类型的连接跟踪成为了可能。
 
-网络层作为ISO 7层协议（网络关系图可参考 http://www.52im.net/thread-180-1-1.html）的第三层，其代表协议为IP（Internet Protocol）协议，协议号为 0x0800。协议处理流程大致如下：
+网络层作为ISO 7层协议（网络关系图可参考 http://www.52im.net/thread-180-1-1.html ）的第三层，其代表协议为IP（Internet Protocol）协议，协议号为 0x0800。协议处理流程大致如下：
 
 ![基本包处理流程](/images/Netfilter架构概述/基本包处理流程.png)
 
@@ -41,7 +41,7 @@ int ip_rcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, 
 
 上图即为Netfilter经典的五个处理点。
 
-深入`NF_HOOK`的实现：
+**深入到`NF_HOOK`的内部可发现最重要的结构为内核全局变量nf_hooks：**
 
 ```c
 //netfilter.h	include\linux
@@ -54,7 +54,7 @@ NF_HOOK(uint8_t pf, unsigned int hook, struct sk_buff *skb,
 }
 /*
 pf		: Netfilter Protocol
-hook	: Netfilter Hooknum
+hook		: Netfilter Hooknum
 skb		: 要处理的Packet
 in		: 入接口
 out		: 出接口
@@ -181,9 +181,9 @@ repeat:
 
 ## 核心数据结构
 
-Netfilter中有两个数据比较主要： `nf_hooks`和`nf_hook_ops`。
+Netfilter中有两个数据比较主要： **`nf_hooks**`和`**nf_hook_ops`**。
 
-本质上，`nf_hooks`仅仅是一个二维hash头。
+本质上，`nf_hooks`是一个二维hash头。
 
 ```c
 extern struct list_head nf_hooks[NFPROTO_NUMPROTO][NF_MAX_HOOKS];
@@ -203,7 +203,7 @@ enum {
 };
 ```
 
-Protocol中Hook数量为：
+Protocol中最大Hook数量为：
 
 ```c
 #define NF_MAX_HOOKS 8
@@ -353,7 +353,7 @@ Netfilter是内核的一种网络架构，而`iptables`是`netfilter`的用户�
 
 可见`iptables`作为模块存于kernel中，而模块`ip_tables`作为基础模块由其他五个模块（kernel version不同，可能缺少`iptable_security`，模块命名方式：iptables_表名）引用。
 
-其中模块`ip_tabls`为承接模块，承接user/kernel的信息交互。而其他五个模块主要提供不同的（iptables 表）类型到`nf_hooks`的映射。
+其中**模块`ip_tabls`为承接模块，承接user/kernel的信息交互**。而其他五个模块主要提供不同的（iptables 表）类型到`nf_hooks`的映射。
 
 ## 模块间的交互
 
@@ -375,7 +375,6 @@ static int __init iptable_filter_init(void)
 		ret = PTR_ERR(filter_ops);
 		unregister_pernet_subsys(&iptable_filter_net_ops);
 	}
-
 	return ret;
 }
 ```
