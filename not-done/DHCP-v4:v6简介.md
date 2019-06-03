@@ -1,11 +1,33 @@
 ---
-title: IPv6 地址配置
+title: DHCP v4/v6简介
 date: 2018-12-16 22:48:31
 categories: Linux内核
 tags:
   - icmpv6
   - dhcpv6
 ---
+
+DHCP 总览
+
+DHCP是做什么的
+
+DPCH v4 
+
+协议
+
+报文 举例
+
+常用option
+
+
+
+DPCH v6
+
+协议
+
+报文 举例
+
+常用option
 
 # 地址自动配置
 
