@@ -4,7 +4,7 @@ date: 2019-06-23 15：34：32
 categories:
 tags:
   - dns
-typora-root-url: ../source
+typora-root-url: ../../source
 ---
 
 [域名系统](https://zh.wikipedia.org/wiki/%E5%9F%9F%E5%90%8D%E7%B3%BB%E7%BB%9F)（英语：Domain Name System，缩写：DNS）是互联网的一项服务。它作为将域名和IP地址相互映射的一个分布式数据库，使人更方便地访问互联网。DNS使用TCP和UDP端口53。当前，对于每一级域名长度的限制是63个字符，域名总长度则不能超过253个字符。
@@ -24,14 +24,6 @@ DNS 数据库的结构如图1所示，就象一棵倒挂着的树。
 DNS 根域名服务器并不真的只有 13 台，而是 13 个 IP，对应了 A-M 13 个编号，
 借由任播（Anycast）技术，编号相同的根服务器使用同一个IP（类似一个集群）。
 ```
-
-为什么是13个？（TODO）
-
-https://www.zhihu.com/question/22587247
-
-https://miek.nl/2013/november/10/why-13-dns-root-servers/
-
-https://jaminzhang.github.io/dns/The-Reason-of-There-Is-Only-13-DNS-Root-Servers/
 
 #### 顶级域
 
@@ -210,17 +202,20 @@ $ dig alibaba.com
 最后这 16 个二进制的位通过进制转换即可变成十六进制的
 
 - **QR 1bit**
+  
   - `0` 为客户端请求包
   - `1` 为服务器响应包
+  
 - **Opcode 4bits**
+  
   - `0000` 为普通的 DNS 请求
   - `0001` 为 rDNS 请求
   - `0002` 为服务器状态
   - `0003` 无
   - `0004` 为通知 (Notify)
   - `0005` 为更新 (Update)
-  - `0006 - 0015` 保留
-
+- `0006 - 0015` 保留
+  
 - **AA 1bit**
   - `0` 为应答服务器不是该域名的权威解析服务器
   - `1` 为应答服务器是该域名的权威解析服务器
@@ -434,3 +429,9 @@ QCLASS 字段出现在查询的 question 部分。QCLASS 值是 CLASS 值的超�
 [DNS 标志位简要解析](https://imlonghao.com/40.html)
 
 [DNS classes](https://miek.nl/2009/july/31/dns-classes/)
+
+[为什么域名根服务器只能有13台呢？](https://www.zhihu.com/question/22587247)
+
+[Why 13 DNS root servers?](https://miek.nl/2013/november/10/why-13-dns-root-servers/)
+
+[只有 13 台 DNS 根域名服务器原因](https://jaminzhang.github.io/dns/The-Reason-of-There-Is-Only-13-DNS-Root-Servers/)

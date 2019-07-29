@@ -1,5 +1,5 @@
 ---
-title: DNS服务器配置
+title: DNS服务器配置之BIND
 date: 2018-01-17 11:05:19
 categories:
 tags:
@@ -21,22 +21,16 @@ DNS系统是由各式各样的DNS软件所驱动的，例如：
 
 文件权限问题
 
-https://cloud.tencent.com/developer/article/1078811
+[如何在RedHat7上使用Bind搭建DNS服务](https://cloud.tencent.com/developer/article/1078811)
 
-https://blog.51cto.com/anyisalin/1753638
+[CentOS 7 使用 bind 配置私有网络的 DNS](https://qizhanming.com/blog/2017/05/27/how-to-configure-bind-as-a-private-network-dns-server-on-centos-7)
 
-https://blog.51cto.com/dengxi/1700965
+[How To Configure BIND as a Private Network DNS Server on CentOS 7](https://www.digitalocean.com/community/tutorials/how-to-configure-bind-as-a-private-network-dns-server-on-centos-7)
 
-https://qizhanming.com/blog/2017/05/27/how-to-configure-bind-as-a-private-network-dns-server-on-centos-7
+[CentOS7.4下DNS服务器软件BIND安装及相关的配置](https://blog.51cto.com/liqingbiao/2093064)
 
-https://www.digitalocean.com/community/tutorials/how-to-configure-bind-as-a-private-network-dns-server-on-centos-7
+[BIND9 管理员参考手册](https://www.centos.bz/manual/BIND9-CHS.pdf)
 
-https://www.digitalocean.com/community/tutorial_series/an-introduction-to-managing-dns
 
-https://docs.oracle.com/cd/E24847_01/html/E22302/intro-1.html#scrolltoc
 
-https://blog.51cto.com/liqingbiao/2093064
-
-http://www.ruanyifeng.com/blog/2016/06/dns.html
-
-https://www.centos.bz/manual/BIND9-CHS.pdf
+阿里DNS：三问BIND主辅同步
