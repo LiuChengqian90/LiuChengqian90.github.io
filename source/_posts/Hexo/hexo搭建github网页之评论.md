@@ -6,11 +6,15 @@ tags:
  - 评论
 ---
 
-hexo搭建的博客下，有多种评论系统可供选择：Disqus、多说和友言等。但是由于被墙或者评论系统关闭，已不可再用。本介绍基于 GitHub Issues开发的评论系统——[gitment](https://github.com/imsun/gitment)。
+hexo搭建的博客下，有多种评论系统可供选择：Disqus、多说和友言等。
 
-在新版的 HEXO NEXT主题中，已经集成了 GITMENT。
+## 畅言
 
-## OAuth Application
+## Valine
+
+## Gitment
+
+### OAuth Application
 
 OAuth Application是一种认证机制，可参考[简述 OAuth 2.0 的运作流程](http://www.barretlee.com/blog/2016/01/10/oauth2-introduce/)。
 
@@ -27,7 +31,7 @@ OAuth Application是一种认证机制，可参考[简述 OAuth 2.0 的运作流
 github settings -->> Developer settings -->> OAuth Apps
 ```
 
-## gitment配置
+### gitment配置
 
 gitment创作者列出的[配置方法](https://imsun.net/posts/gitment-introduction/)比较简单，本文以next主题为例进行详细介绍。
 
@@ -173,7 +177,7 @@ gitment创作者列出的[配置方法](https://imsun.net/posts/gitment-introduc
 
 至此，评论配置完成。
 
-## 调试点
+### 调试点
 
 1. 文件中空格、结尾空行最好保持不变。
 
@@ -189,7 +193,7 @@ gitment创作者列出的[配置方法](https://imsun.net/posts/gitment-introduc
 
 4. 最易出错的地方应该是字段置换错误（layout/_third-party/comments/gitment.swig文件调用js时，字段已经置换）。可进入浏览器调试模式（F12）进行调试。
 
-## 问题
+### 问题
 
 1. redirect_uri_mismatch
 
