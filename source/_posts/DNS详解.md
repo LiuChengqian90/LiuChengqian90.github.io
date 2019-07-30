@@ -275,7 +275,7 @@ Questions、Answer RRs、Authority RRs、Additional RRs 各自表示后面的四
 
 Questions表示查询问题区域节的数量，Answers表示回答区域的数量，Authoritative namesversers表示授权区域的数量，Additional recoreds表示附加区域的数量。
 
-### 正文
+### RECORD域
 
 **Queries区域**
 
@@ -404,15 +404,31 @@ QCLASS 字段出现在查询的 question 部分。QCLASS 值是 CLASS 值的超�
 | :----- | :--- | :--------------- | :--- |
 | *      | 255  | any class/任何类 |      |
 
+### 报文示例
 
+#### 请求报文
 
-**请求报文**
+请求报文中主要Queries域比较主要，标识此请求的目的。
 
 ![域名系统](/images/DNS详解/dns-request.png)
 
 
 
-**回应报文**
+#### 回应报文
+
+回应报文比请求报文多了三个域：
+
+- Answers
+
+  对请求的回应。此报文回应两条A记录。
+
+-  Authoritative nameservers
+
+  域名所属的NS。此报文表明`alibaba.com`有两条NS。
+
+-  Additional records
+
+  NS对应的记录。此报文表明Authoritative nameservers中的NS有4条A记录（每个NS两条）。
 
 ![域名系统](/images/DNS详解/dns-respond.jpg)
 
