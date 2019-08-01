@@ -112,12 +112,6 @@ sitemap:
 baidusitemap: 
   path: baidusitemap.xml
 
-search:
-  path: search.xml
-  field: post
-  format: html
-  limit: 10000
-
 algolia:
   applicationID: 'AF7ILS3DFM'
   apiKey: 'd6766fc778aa1a2b67445c7a40b5dc75'
