@@ -120,15 +120,16 @@ YUM安装后，bind9整体配置文件放于`/etc/`目录
 
    ```shell
    $TTL 1D
-   @    IN SOA    test.com. root (
+   test.com.    IN SOA    ns1.test.com. root (
                        0    ; serial
                        1D    ; refresh
                        1H    ; retry
                        1W    ; expire
                        3H )    ; minimum
-           NS      @
+           NS      ns1.test.com.
            A       127.0.0.1
            AAAA    ::1
+   ns1    IN    A    172.16.1.66
    node1    IN    A    172.16.1.5
    node2    IN    A    172.16.1.6
    node3    IN    A    172.16.1.7
@@ -138,16 +139,14 @@ YUM安装后，bind9整体配置文件放于`/etc/`目录
    zone文件中的所有指令都以一个 $ 开始，指令主要用来表示zone文件中的一些控制信息。
    ```
 
-   $TTL指令为没有定义TTLs的后续记录设定即时时间。有效TTLs是在0-2147483647秒范围内，在[RFC 2308]( https://tools.ietf.org/html/rfc2308)中定义。
-
-   @指的是当前域的顶级。
+   **$TTL指令**为没有定义TTLs的后续记录设定即时时间。有效TTLs是在0-2147483647秒范围内，在[RFC 2308]( https://tools.ietf.org/html/rfc2308)中定义。
 
    SOA(start of authority)资源记录：它定义了一个域的全局特性，必须是出现在zone文件中的第一个资源记录，而且一个zone文件中必须只有一个SOA资源记录。其中SOA后面的test.com.与root分别是域名服务器和管理员邮箱([root@test.com](mailto:root@test.com))。
 
 3. 验证配置是否正确
 
    ```shell
-   named-checkzone test.com /var/named/test.com.zone
+   # named-checkzone test.com /var/named/test.com.zone
    ```
 
 4. 启动服务`named`
@@ -167,7 +166,63 @@ YUM安装后，bind9整体配置文件放于`/etc/`目录
 
 
 
-## ACL
+## OPTIONS语句
+
+
+
+
+
+
+
+##  **ORIGIN**指令
+
+语法： **$ORIGIN domain-name [ comment]** 
+
+\$ORIGIN设置附属于任何不合格记录的域名。当一个域被首先读入时存在一个任意的\$ORIGIN  <zone-name>，当前的\$ORIGIN附属于域。
+
+
+
+修改`/var/named/test.com.zone`
+
+```shell
+$TTL 1D
+$ORIGIN test.com.
+@    IN SOA    ns1 root (
+                    0    ; serial
+                    1D    ; refresh
+                    1H    ; retry
+                    1W    ; expire
+                    3H )    ; minimum
+        NS      ns1
+        A       127.0.0.1
+        AAAA    ::1
+        MX  10  mail
+ns1    IN    A    172.16.1.66
+mail    IN    A    172.16.1.88
+node1    IN    A    172.16.1.5
+node2    IN    A    172.16.1.6
+node3    IN    A    172.16.1.7
+```
+
+@指的是当前域的顶级。
+
+验证配置并重启服务
+
+```shell
+# named-checkzone test.com /var/named/test.com.zone
+# systemctl start named
+```
+
+验证记录是否生效
+
+```shell
+# dig node1.test.com @192.168.1.5
+# dig test.com @192.168.1.5
+```
+
+
+
+## ACL语句
 
 acl语句给一个**地址匹配表**列赋了一个象征名称。它的名字来自于地址匹配列表的最基本功能：**访问控制表列（ACLs）**。 
 
@@ -218,15 +273,55 @@ localhost 和localnets的ACLs目前不支持IPV6（也就是说，localhost不�
    # dig node2.test.com @192.168.1.5
    ```
 
-## 文件拆分
 
-include
 
-## zone语句
+## **INCLUDE**指令
+
+include语句可以在include语句出现的地方插入指定的文件。Include 语句通过允许对配置文件的读或写，来简化对配置文件的管理。
+
+语法：**$INCLUDE filename [ origin ] [ comment ]**  *(* 文件名 *[* 源 *] [* 注释*])* 
+
+读和运行文件filename就好象它已经被包含进文件中。如果ORIGIN被设定，文件将会被设定为ORIGIN的值，否则就使用当前的\$ORIGIN。 一旦文件被打开，ORIGIN和当前的域名将会恢复到它们对$INCLUDE有优先权的值。 
+
+注意：[RFC1035](https://tools.ietf.org/html/rfc1035)设定的当前源应该在一个$INCLUDE之后恢复，但它并不要求当前域名也应该恢复。BIND9全都恢复。这可以作为一个从[RFC1035](https://tools.ietf.org/html/rfc1035)中的出的偏差，一个特性或者两者都是。
+
+
+
+创建`/etc/named/acllist`文件以验证INCLUDE功能
+
+1. 新建`/etc/named/acllist`，内容如下
+
+   ```shell
+   acl allquery {
+           192.168.1.5;
+   };
+   ```
+
+2. 更改`/etc/named.conf`，删除其中的acl部分
+
+3. 在`/etc/named.conf`文件options前添加include语句
+
+   ```shell
+   include "/etc/named/acllist";
+   ```
+
+4. 在两个HOST上进行验证。
+
+   ```shell
+   # dig node2.test.com @192.168.1.5
+   ```
+
+   `192.168.1.13`主机上会返回REFUSED。
+
+   
+
+## ZONE语句
 
 ### 同步协议
 
 ## 视图
+
+## KEY语句
 
 
 
