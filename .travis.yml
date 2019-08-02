@@ -7,9 +7,6 @@ cache:
    - node_modules
 
 before_install:
-- openssl aes-256-cbc -K $encrypted_b2b118e7adff_key -iv $encrypted_b2b118e7adff_iv
-  -in id_rsa_travis.enc -out .travis/id_rsa_travis -d
-
 - git config --global user.name 'liuchengqian90'
 - git config --global user.email xieling1990.happy@163.com
 - export TZ='Asia/Shanghai'
@@ -42,3 +39,4 @@ branches:
 env:
   global:
     - GH_REF: github.com/LiuChengqian90/LiuChengqian90.github.io
+    - secure: RFOHjeXzNADsFsEpzRe5Fj5pvB0AScyT/pTaxpxxeuEweh3B4I3wdbZUdkHywTgdClFc/S6mOYF5WqEmVn7DiFzD+O0OvriVLPcIjt8+HF0XWLJP8CQibJhjQhODPR/pS5U8YpG1UnlmgHiumsAfDBPcyyovSUuluJMNuTLYtT7jmAg/D0/VZfvTkm5wZVf7j182fD6PoTL93NMJPR4DbQK8/6KC3c2ibtorMxyC6VeSBM9VFQG9rljQ/UsBBgrVjYdz8vp/0Be5V97nR0x8lYKBlQAw7aTux5QOqo30i97yGW8Xn5RjGQfgBHBLegwY6skUbvv/aIsdMtrshMv27xtEoe0vVet03W5boj0Y2mf7yHPI3sJ0rFysa03kSlhDleixM8mWs/n/Ejc7cpFoafGQL3xStIgurxLyP2Gs80NJ7d9VR3+bjU7VppHpj+OFHG3rh7iUxRtnUANZlKQ/75v85XQJtD7PpvFXJp73osU3O+051kycoDbjorlwYgvBu2z0hQ2IyWFSohvqH4rYiqVPdg2HMD9e/vbAy/tnIcA1POSc6Q8x1X7JSjeXpPMI5sHzFqK6PRB9g3iQK+1hLmsqCEB6dfvqJ6kkxmse9sFkcS2gNsVBQqAzD23Cj4MLCyuTt97oVfhLYqDopHWAyhCtR5cnFGAtQypZm0sINDo=
