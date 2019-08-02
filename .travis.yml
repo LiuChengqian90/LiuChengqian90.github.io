@@ -17,9 +17,9 @@ install:
 - npm install hexo-deployer-git --save
 
 script:
-#  - hexo clean
-#  - hexo g && gulp
-  - npm run deploy  # hexo clean && hexo g -d
+  - hexo clean
+  - hexo g
+#  - npm run deploy  # hexo clean && hexo g -d
 
 after_script:
   - git clone https://${GH_REF} .deploy_git
@@ -30,7 +30,7 @@ after_script:
   - cd ./public
   - git add -A
   - git commit -m "Travis CI Auto Builder at `date +"%Y-%m-%d %H:%M"`"
-  - git push --force --quiet "https://${github-token}@${GH_REF}" master:master
+  - git push --force --quiet "https://${githubtoken}@${GH_REF}" master:master
 
 branches:
    only:
