@@ -31,10 +31,11 @@ Centos 安装 npm
 当重装电脑之后，或者想在其他电脑上修改博客，可以使用下列步骤：
 
 1. 使用 git clone git@github.com:LiuChengqian90/LiuChengqian90.github.io.git 拷贝仓库（默认分支为hexo）；
-2. 在本地新拷贝的 LiuChengqian90.github.io 文件夹下通过Git bash依次执行下列指令：npm install hexo、npm install hexo-cli、npm install、npm install hexo-deployer-git（记得，不需要hexo init这条指令）。
+2. 在本地新拷贝的 LiuChengqian90.github.io 文件夹下通过Git bash依次执行下列指令：npm install hexo; npm install hexo-cli; npm install; npm install hexo-deployer-git（记得，不需要hexo init这条指令）。
 
 参考资料：
 
 [知乎参考](https://www.zhihu.com/question/21193762)
 
+ export HEXO_ALGOLIA_INDEXING_KEY=d6766fc778aa1a2b67445c7a40b5dc75
 hexo clean;hexo g;hexo algolia;gulp;hexo d
