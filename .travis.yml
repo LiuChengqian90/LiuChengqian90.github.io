@@ -17,9 +17,9 @@ install:
 - npm install hexo-deployer-git --save
 
 script:
-  - hexo clean
-  - hexo g && gulp
-#  - npm run deploy  # hexo clean && hexo g -d
+#  - hexo clean
+#  - hexo g && gulp
+  - npm run deploy  # hexo clean && hexo g -d
 
 after_script:
   - git clone https://${GH_REF} .deploy_git
