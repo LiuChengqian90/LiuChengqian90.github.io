@@ -37,7 +37,7 @@ Centos 安装 npm
 
 [知乎参考](https://www.zhihu.com/question/21193762)
 
- export HEXO_ALGOLIA_INDEXING_KEY=d6766fc778aa1a2b67445c7a40b5dc75
+export HEXO_ALGOLIA_INDEXING_KEY=d6766fc778aa1a2b67445c7a40b5dc75
 hexo clean;hexo g;hexo algolia;gulp;hexo d
 
 github Personal access tokens
