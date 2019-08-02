@@ -39,3 +39,6 @@ Centos 安装 npm
 
  export HEXO_ALGOLIA_INDEXING_KEY=d6766fc778aa1a2b67445c7a40b5dc75
 hexo clean;hexo g;hexo algolia;gulp;hexo d
+
+github Personal access tokens
+e39e0ca5bdc8e495647278128a5063692d0ceaf0
