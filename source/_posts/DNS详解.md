@@ -277,44 +277,44 @@ Questions表示查询问题区域节的数量，Answers表示回答区域的数�
 
 ### RECORD域
 
-**Queries区域**
+#### Queries域
 
 ![域名系统](/images/DNS详解/dns-package-quey.png)
 
-- **查询名**
+**查询名**
 
-  长度不固定，且不使用填充字节，一般该字段表示的就是需要查询的域名（如果是反向查询，则为IP，反向查询即由IP地址反查域名），一般的格式如下图所示。![域名系统](/images/DNS详解/dns-package-queryname.png)
+长度不固定，且不使用填充字节，一般该字段表示的就是需要查询的域名（如果是反向查询，则为IP，反向查询即由IP地址反查域名），一般的格式如下图所示。![域名系统](/images/DNS详解/dns-package-queryname.png)
 
-- **查询类型：**
+**查询类型：**
 
-  | 类型 | 助记符 | 说明               |
-  | ---- | ------ | ------------------ |
-  | 1    | A      | 由域名获得IPv4地址 |
-  | 2    | NS     | 查询域名服务器     |
-  | 5    | CNAME  | 查询规范名称       |
-  | 6    | SOA    | 开始授权           |
-  | 11   | WKS    | 熟知服务           |
-  | 12   | PTR    | 把IP地址转换成域名 |
-  | 13   | HINFO  | 主机信息           |
-  | 15   | MX     | 邮件交换           |
-  | 28   | AAAA   | 由域名获得IPv6地址 |
-  | 252  | AXFR   | 传送整个区的请求   |
-  | 255  | ANY    | 对所有记录的请求   |
+| 类型 | 助记符 | 说明               |
+| ---- | ------ | ------------------ |
+| 1    | A      | 由域名获得IPv4地址 |
+| 2    | NS     | 查询域名服务器     |
+| 5    | CNAME  | 查询规范名称       |
+| 6    | SOA    | 开始授权           |
+| 11   | WKS    | 熟知服务           |
+| 12   | PTR    | 把IP地址转换成域名 |
+| 13   | HINFO  | 主机信息           |
+| 15   | MX     | 邮件交换           |
+| 28   | AAAA   | 由域名获得IPv6地址 |
+| 252  | AXFR   | 传送整个区的请求   |
+| 255  | ANY    | 对所有记录的请求   |
 
-- **查询类**
+**查询类**
 
-  定义有下述 **CLASS** 助记符和值：
+定义有下述 **CLASS** 助记符和值：
 
-  | 助记符 | 值   | 含义                     | 备注                                     |
-  | :----- | :--- | :----------------------- | :--------------------------------------- |
-  | IN     | 1    | the Internet/互联网      |                                          |
-  | CS     | 2    | the CSNET class/CSNET 类 | 被废弃，仅在某些被废弃的 RFCs 中用于举例 |
-  | CH     | 3    | the CHAOS class/CHAOS 类 |                                          |
-  | HS     | 4    | Hesiod [Dyer 87]         |                                          |
+| 助记符 | 值   | 含义                     | 备注                                     |
+| :----- | :--- | :----------------------- | :--------------------------------------- |
+| IN     | 1    | the Internet/互联网      |                                          |
+| CS     | 2    | the CSNET class/CSNET 类 | 被废弃，仅在某些被废弃的 RFCs 中用于举例 |
+| CH     | 3    | the CHAOS class/CHAOS 类 |                                          |
+| HS     | 4    | Hesiod [Dyer 87]         |                                          |
 
-  备注：CHAOS 和 Hesiod 请参考 [DNS classes](https://miek.nl/2009/july/31/dns-classes/)
+备注：CHAOS 和 Hesiod 请参考 [DNS classes](https://miek.nl/2009/july/31/dns-classes/)
 
-**DNS Resource Records**
+#### **DNS Resource Records**
 
 RR的定义来自 rfc1035 中 3.2 RR definitions。所有的RR都有如下所示的相同的顶层格式：
 
@@ -386,12 +386,12 @@ QTYPE 字段出现在查询的 question 部分。QTYPE 是 TYPE 的超集，因�
 | *     | 255  | A request for all records/请求所有记录                       |                 |
 
 ```
-0						类型0用作SIG RR的特殊指示器。在其他情况下，不得分配普通用途。
-1 - 127 		此范围内的剩余TYPE由IETF Consensus分配给数据类型。
-128 - 255		此范围内的剩余TYPE由IETF共识分配给Q和Meta TYPE。
-256 - 32767	由IETF共识分配给 Q或Meta TYPE。
-32768 - 65279	所需规范见[RFC 2434]。
-65280 - 65535	私人使用。
+0             类型0用作SIG RR的特殊指示器。在其他情况下，不得分配普通用途
+1 - 127       此范围内的剩余TYPE由IETF Consensus分配给数据类型
+128 - 255     此范围内的剩余TYPE由IETF共识分配给Q和Meta TYPE
+256 - 32767   由IETF共识分配给 Q或Meta TYPE
+32768 - 65279 所需规范见[RFC 2434]
+65280 - 65535 私人使用
 ```
 
 OPT（OPTion）RR，编号41，在[[RFC 2671]](https://tools.ietf.org/html/rfc2671)中规定。 其主要目的是扩展各种DNS字段的有效字段大小，包括RCODE，标签类型，标志位和RDATA大小。 特别是，对于识别它的解析器和服务器，它将RCODE字段从4位扩展到12位。
