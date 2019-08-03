@@ -115,18 +115,8 @@ baidusitemap:
 algolia:
   applicationID: 'AF7ILS3DFM'
   apiKey: 'd6766fc778aa1a2b67445c7a40b5dc75'
-  adminApiKey: '64bbac708ef85b1f154048cf3edd4782'
   indexName: 'hexo_github'
   chunkSize: 5000
-  fields:
-    - content:strip:truncate,0,500
-    - excerpt:strip
-    - gallery
-    - permalink
-    - photos
-    - slug
-    - tags
-    - title
 
 symbols_count_time:
   symbols: true
