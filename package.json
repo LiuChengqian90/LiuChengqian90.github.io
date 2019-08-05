@@ -6,6 +6,7 @@
     "version": "3.9.0"
   },
   "dependencies": {
+    "braces": "^3.0.2",
     "core-js": "^3.1.4",
     "eslint": "^6.1.0",
     "gulp-htmlclean": "^2.7.22",
@@ -30,6 +31,7 @@
     "hexo-server": "^0.2.2",
     "hexo-symbols-count-time": "^0.4.4",
     "install": "^0.13.0",
+    "lodash.template": "^4.5.0",
     "npm": "^6.10.2",
     "optional": "^0.1.4"
   },
