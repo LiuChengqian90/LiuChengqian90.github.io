@@ -1,0 +1,4 @@
+export HEXO_ALGOLIA_INDEXING_KEY=f498f96ca58f4a1f7e0e1ceced80fcf2
+hexo clean; sleep 3; hexo algolia;hexo g;gulp;hexo d
+
+if algolia failed , try more times.
