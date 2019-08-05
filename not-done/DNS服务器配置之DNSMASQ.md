@@ -1,5 +1,5 @@
 ---
-title: DNS服务器配置之BIND
+title: DNS服务器配置之DNSMASQ
 date: 2018-01-17 11:05:19
 categories:
 tags:
@@ -166,180 +166,23 @@ YUM安装后，bind9整体配置文件放于`/etc/`目录
 
 
 
-## OPTIONS语句
+## 优秀资料
 
 
 
 
 
-
-
-##  **ORIGIN**指令
-
-语法： **$ORIGIN domain-name [ comment]** 
-
-\$ORIGIN设置附属于任何不合格记录的域名。当一个域被首先读入时存在一个任意的\$ORIGIN  <zone-name>，当前的\$ORIGIN附属于域。
-
-
-
-修改`/var/named/test.com.zone`
-
-```shell
-$TTL 1D
-$ORIGIN test.com.
-@    IN SOA    ns1 root (
-                    0    ; serial
-                    1D    ; refresh
-                    1H    ; retry
-                    1W    ; expire
-                    3H )    ; minimum
-        NS      ns1
-        A       127.0.0.1
-        AAAA    ::1
-        MX  10  mail
-ns1    IN    A    172.16.1.66
-mail    IN    A    172.16.1.88
-node1    IN    A    172.16.1.5
-node2    IN    A    172.16.1.6
-node3    IN    A    172.16.1.7
-```
-
-@指的是当前域的顶级。
-
-验证配置并重启服务
-
-```shell
-# named-checkzone test.com /var/named/test.com.zone
-# systemctl start named
-```
-
-验证记录是否生效
-
-```shell
-# dig node1.test.com @192.168.1.5
-# dig test.com @192.168.1.5
-```
-
-
-
-## ACL语句
-
-acl语句给一个**地址匹配表**列赋了一个象征名称。它的名字来自于地址匹配列表的最基本功能：**访问控制表列（ACLs）**。 
-
-注意，一个地址表列名必须首先在acl中定义了，然后才能在别处使用；提前调用是不允许的。 
-
-下列ACLs组成： 
-
-| any       | 匹配所有主机                 |
-| --------- | ---------------------------- |
-| none      | 不匹配任何主机               |
-| localhost | 匹配主机上所有IPV4的网络接口 |
-| localnets | 匹配所有IPV4本地网络的主机   |
-
-localhost 和localnets的ACLs目前不支持IPV6（也就是说，localhost不匹配主机的IPV6地址，localnets不匹配连上IPV6网络的主机），因为缺乏确定本地IPV6主机地址的标准方法。 
-
-
-
-继续修改`/etc/named.conf`验证
-
-1. 增加ACL
-
-   options 前增加如下内容
-
-   ```shell
-   acl allquery {
-           192.168.1.5;
-   };
-   ```
-
-2. 修改allow-query字段
-
-   应用ACL
-
-   ```shell
-   allow-query     { allquery; };
-   ```
-
-3. 验证配置、重启服务
-
-   ```shell
-   # named-checkconf; 
-   # systemctl restart named;
-   ```
-
-4. 在两个HOST上进行验证，仅有`instance-84qrartl`可以解析到地址。
-
-   ```shell
-   # dig node2.test.com @192.168.1.5
-   ```
-
-
-
-## **INCLUDE**指令
-
-include语句可以在include语句出现的地方插入指定的文件。Include 语句通过允许对配置文件的读或写，来简化对配置文件的管理。
-
-语法：**$INCLUDE filename [ origin ] [ comment ]**  *(* 文件名 *[* 源 *] [* 注释*])* 
-
-读和运行文件filename就好象它已经被包含进文件中。如果ORIGIN被设定，文件将会被设定为ORIGIN的值，否则就使用当前的\$ORIGIN。 一旦文件被打开，ORIGIN和当前的域名将会恢复到它们对$INCLUDE有优先权的值。 
-
-注意：[RFC1035](https://tools.ietf.org/html/rfc1035)设定的当前源应该在一个$INCLUDE之后恢复，但它并不要求当前域名也应该恢复。BIND9全都恢复。这可以作为一个从[RFC1035](https://tools.ietf.org/html/rfc1035)中的出的偏差，一个特性或者两者都是。
-
-
-
-创建`/etc/named/acllist`文件以验证INCLUDE功能
-
-1. 新建`/etc/named/acllist`，内容如下
-
-   ```shell
-   acl allquery {
-           192.168.1.5;
-   };
-   ```
-
-2. 更改`/etc/named.conf`，删除其中的acl部分
-
-3. 在`/etc/named.conf`文件options前添加include语句
-
-   ```shell
-   include "/etc/named/acllist";
-   ```
-
-4. 在两个HOST上进行验证。
-
-   ```shell
-   # dig node2.test.com @192.168.1.5
-   ```
-
-   `192.168.1.13`主机上会返回REFUSED。
-
-   
-
-## ZONE语句
-
-### 同步协议
-
-## 视图
-
-## KEY语句
-
-
-
-[CentOS7搭建BIND9 DNS服务器过程](https://blog.51cto.com/11804445/2056629)
-
-[CentOS 7 使用 bind 配置私有网络的 DNS](https://qizhanming.com/blog/2017/05/27/how-to-configure-bind-as-a-private-network-dns-server-on-centos-7)
-
-[How To Configure BIND as a Private Network DNS Server on CentOS 7](https://www.digitalocean.com/community/tutorials/how-to-configure-bind-as-a-private-network-dns-server-on-centos-7)
-
-[CentOS7.4下DNS服务器软件BIND安装及相关的配置](https://blog.51cto.com/liqingbiao/2093064)
-
-[BIND9 管理员参考手册](https://www.centos.bz/manual/BIND9-CHS.pdf)
-
-
+BIND同步原理
 
 [阿里DNS：三问BIND主辅同步](https://zhuanlan.zhihu.com/p/43444785)
 
 [DNS工作原理及主从同步](https://blog.51cto.com/54276311/1536305)
+
+
+
+BIND管理
+
+https://www.it7e.com/archives/1727.html
 
 
 
