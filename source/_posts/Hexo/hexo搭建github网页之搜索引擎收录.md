@@ -4,6 +4,7 @@ date: 2017-10-20 18:33:54
 categories: Hexo
 tags:
   - 搜索引擎
+typora-root-url: ../../../source
 ---
 
 ## 确认收录
@@ -29,6 +30,8 @@ site:baidu.com
 进入 [谷歌搜索引擎站点验证](https://www.google.com/webmasters/tools/home?hl=zh-CN)，验证流程比较智能，输入网址之后，登录域名提供商，谷歌会自动添加一条 TXT记录，之后即可完成验证。
 
 ![谷歌TXT记录.png](/images/hexo搭建github/谷歌TXT记录.png)
+
+**对于阿里云DNS，需要将解析线路设置为“默认”**。
 
 ### 百度验证
 
