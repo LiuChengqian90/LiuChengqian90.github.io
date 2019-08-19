@@ -128,7 +128,7 @@ exturl: false
 
 # Google Webmaster tools verification.
 # See: https://www.google.com/webmasters
-google_site_verification: DWqJO5qUvqi4sczcquw0dsonM1i3SQe_Kl171LYmmac
+# google_site_verification: // use domain to verify
 
 # Bing Webmaster tools verification.
 # See: https://www.bing.com/webmaster
