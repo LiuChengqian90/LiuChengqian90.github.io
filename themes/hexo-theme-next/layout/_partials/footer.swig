@@ -1,7 +1,7 @@
 <div class="copyright">{#
 #}{% set current = date(Date.now(), "YYYY") %}{#
 #}{% if theme.footer.beian.enable %}{#
-#}  {{ next_url('http://www.miitbeian.gov.cn', theme.footer.beian.icp + ' ') }}{#
+#}  {{ next_url('http://www.beian.miit.gov.cn', theme.footer.beian.icp + ' ') }}{#
 #}{% endif %}{#
 #}&copy; {% if theme.footer.since and theme.footer.since != current %}{{ theme.footer.since }} – {% endif %}{#
 #}<span itemprop="copyrightYear">{{ current }}</span>
@@ -60,6 +60,3 @@
   #}{{ theme.footer.custom_text }}{#
 #}</div>
 {% endif %}
-<div>
-<a href="http://www.miitbeian.gov.cn/">京ICP备18025897号</a> 
-</div>
