@@ -1,5 +1,5 @@
 ---
-title: DNS服务器配置之BIND9
+title: DNS服务器之BIND9
 date: 2019-08-05 11:05:19
 categories:
 tags:
