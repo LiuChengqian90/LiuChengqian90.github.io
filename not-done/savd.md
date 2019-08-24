@@ -11,3 +11,14 @@ Linux 链接跟踪
 
    1. <https://awen.me/post/59062.html>
    2. <https://blog.csdn.net/liangyuannao/article/details/8622502>
+
+
+hexo 压缩
+
+hexo-all-minifier
+配置
+验证
+
+gulp
+配置
+验证

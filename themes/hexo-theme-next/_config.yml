@@ -179,8 +179,8 @@ menu_settings:
 # Schemes
 #scheme: Muse
 #scheme: Mist
-scheme: Pisces
-#scheme: Gemini
+#scheme: Pisces
+scheme: Gemini
 
 
 # ---------------------------------------------------------------
@@ -441,10 +441,10 @@ tagcloud:
 # ---------------------------------------------------------------
 
 font:
-  enable: false
+  enable: true
 
   # Uri of fonts host, e.g. //fonts.googleapis.com (Default).
-  host: //fonts.lug.ustc.edu.cn
+  host: //fonts.proxy.ustclug.org
 
   # Font options:
   # `external: true` will load this font family from `host` above.
