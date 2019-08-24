@@ -22,3 +22,6 @@ hexo-all-minifier
 gulp
 配置
 验证
+
+更改背景图片
+https://blog.diqigan.cn/posts/add-background-picture-for-next.html
