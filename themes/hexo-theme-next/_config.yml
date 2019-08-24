@@ -249,8 +249,8 @@ toc:
 
 sidebar:
   # Sidebar Position, available values: left | right (only for Pisces | Gemini).
-  position: left
-  #position: right
+  #position: left
+  position: right
 
   # Manual define the sidebar width. If commented, will be default for:
   # Muse | Mist: 320
