@@ -1,6 +1,6 @@
 ---
 title: hexo+github建站之背景图片
-date: 2018-08-25 14:28:37
+date: 2019-08-25 14:28:37
 categories: Hexo
 tags:
   - 背景图片
