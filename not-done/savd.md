@@ -25,3 +25,5 @@ gulp
 
 更改背景图片
 https://blog.diqigan.cn/posts/add-background-picture-for-next.html
+https://blog.csdn.net/lewky_liu/article/details/81149140
+https://blog.diqigan.cn/posts/add-background-picture-for-next.html
