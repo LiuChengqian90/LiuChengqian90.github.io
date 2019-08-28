@@ -4,6 +4,7 @@ date: 2017-12-28 15:36:16
 categories: Linux内核
 tags:
   - VXLAN
+typora-root-url: ../../../source
 ---
 
  此文基于内核 3.10.105 分析linux内核中vxlan接口流量路径。主要是对报文流程内函数进行分析，所以代码居多。

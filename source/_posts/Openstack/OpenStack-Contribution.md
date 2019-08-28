@@ -5,6 +5,7 @@ categories: OpenStack
 tags:
   - neutron
   - OpenStack
+typora-root-url: ../../../source
 ---
 
 ## Launchpad注册

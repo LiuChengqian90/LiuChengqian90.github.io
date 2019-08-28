@@ -6,8 +6,6 @@ tags:
   - crudini
 ---
 
-
-
 crud ini是一个实用程序，用于简化从shell脚本读取和更新ini文件的过程，因此命名为提供crud功能。
 
 ## 工具安装

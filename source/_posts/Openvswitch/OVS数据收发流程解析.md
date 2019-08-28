@@ -7,6 +7,7 @@ tags:
   - ovs-internal
   - ovs-system
   - ovs-vxlan
+typora-root-url: ../../../source
 ---
 
 ovs版本为 2.8.2。

@@ -4,6 +4,7 @@ date: 2017-12-26 17:50:28
 categories: Linux内核
 tags:
   - GRE
+typora-root-url: ../../../source
 ---
 
 ## 协议简介

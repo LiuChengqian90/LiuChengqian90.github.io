@@ -4,6 +4,7 @@ date: 2017-12-11 15:30:14
 categories: Linux内核
 tags:
   - namespace
+typora-root-url: ../../../source
 ---
 
 Tips:系统环境为 Ubuntu 16.04，centos系统在namespace支持方面有些问题。
@@ -273,7 +274,7 @@ Parent - container stopped!
 
 ## PID namespace
 
-![PID Namespace](/images/Linux Namespace/PID Namespace.png)
+![PID Namespace](/images/Linux-Namespace/PID-Namespace.png)
 
 PID namespace隔离非常实用，它对进程PID重新标号，即两个不同namespace下的进程可以有同一个PID。每个PID namespace都有自己的计数程序。内核为所有的PID namespace维护了一个树状结构，最顶层的是系统初始时创建的，我们称之为root namespace。它创建的新PID namespace就称之为child namespace（树的子节点），而原先的PID namespace就是新创建的PID namespace的parent namespace（树的父节点）。通过这种方式，不同的PID namespaces会形成一个等级体系。所属的父节点可以看到子节点中的进程，并可以通过信号量等方式对子节点中的进程产生影响。反过来，子节点不能看到父节点PID namespace中的任何内容。由此产生如下结论。
 
@@ -371,7 +372,7 @@ Mount namespace通过隔离文件系统挂载点对隔离文件系统提供支�
 
 传播事件的挂载对象称为共享挂载（shared mount）；接收传播事件的挂载对象称为从属挂载（slave mount）。既不传播也不接收传播事件的挂载对象称为私有挂载（private mount）。另一种特殊的挂载对象称为不可绑定的挂载（unbindable mount），它们与私有挂载相似，但是不允许执行绑定挂载，即创建mount namespace时这块文件对象不可被复制。
 
-![mount各类挂载状态示意图](/images/Linux Namespace/mount各类挂载状态示意图.png)
+![mount各类挂载状态示意图](/images/Linux-Namespace/mount各类挂载状态示意图.png)
 
 共享挂载的应用场景非常明显，就是为了文件数据的共享所必须存在的一种挂载方式；从属挂载更大的意义在于某些“只读”场景；私有挂载其实就是纯粹的隔离，作为一个独立的个体而存在；不可绑定挂载则有助于防止没有必要的文件拷贝，如某个用户数据目录，当根目录被递归式的复制时，用户目录无论从隐私还是实际用途考虑都需要有一个不可被复制的选项。
 

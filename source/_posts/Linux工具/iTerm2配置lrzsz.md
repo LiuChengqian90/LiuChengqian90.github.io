@@ -5,6 +5,7 @@ categories: Linux工具
 tags:
   - lrzsz
   - iTerm2
+typora-root-url: ../../../source
 ---
 
 Mac原生的终端支持的操作太少，应该不少人都换成了iTerm2，关于iTerm2的好处，请点击[这里](https://www.zhihu.com/question/27447370)。

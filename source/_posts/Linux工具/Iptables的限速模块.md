@@ -5,6 +5,7 @@ categories: Linux工具
 tags:
   - limit
   - hashlimit
+typora-root-url: ../../../source
 ---
 
 `limit`和`hashlimit`是'iptables'的扩展模块，初始是用来限制日志次数的，不过现在基本用来限制包的（传入／传出）速率。

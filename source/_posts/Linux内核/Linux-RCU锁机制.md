@@ -4,6 +4,7 @@ date: 2017-12-04 18:11:53
 categories: Linux内核
 tags:
   - RCU
+typora-root-url: ../../../source
 ---
 
 ## 引言
@@ -341,7 +342,7 @@ __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
 
 由上所述，`synchronize_rcu`的调用关系图如下：
 
-![synchronize_rcu](/images/Linux RCU锁机制/synchronize_rcu.png)
+![synchronize_rcu](/images/LinuxRCU锁机制/synchronize_rcu.png)
 
 之前说，只需要判断所有的CPU都进过了一次上下文切换，就说明所有读者已经退出了。为什么这么说呢？要彻底弄清楚这个问题，我们得从RCU的初始化说起。
 

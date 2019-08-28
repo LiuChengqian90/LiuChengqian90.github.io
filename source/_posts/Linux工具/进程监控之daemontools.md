@@ -5,6 +5,7 @@ categories: Linux工具
 tags:
   - supervise
   - svscan
+typora-root-url: ../../../source
 ---
 
 ## 简介
