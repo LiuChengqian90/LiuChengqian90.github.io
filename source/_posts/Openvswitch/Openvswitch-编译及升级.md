@@ -4,6 +4,7 @@ date: 2018-03-23 19:04:52
 categories: openvswitch
 tags:
   - ovs编译
+typora-root-url: ../../../source
 ---
 
 ## 编译安装

@@ -35,5 +35,3 @@ tags:
    
    dict(izip(d.itervalues(),d.iterkeys()))
    ```
-
-   

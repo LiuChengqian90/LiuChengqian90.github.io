@@ -4,6 +4,7 @@ date: 2017-10-16 17:27:11
 tags:
   - GCC
   - 编译
+typora-root-url: ../../../source
 ---
 
 ## GCC简介

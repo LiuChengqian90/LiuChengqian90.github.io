@@ -4,6 +4,7 @@ date: 2018-03-12 12:03:09
 categories: Linux内核
 tags:
   - Netpoll
+typora-root-url: ../../../source
 ---
 
 本文基于Linux kernel v3.10.105。

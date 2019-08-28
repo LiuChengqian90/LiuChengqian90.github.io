@@ -5,11 +5,10 @@ categories: CPU发展史
 tags:
   - CPU
   - 处理器
+typora-root-url: ../../../source
 ---
 
-![处理器发展史.png](/images/Intel CPU 发展简史/处理器发展史.png)
-
-
+![处理器发展史.png](/images/Intel-CPU-发展简史/处理器发展史.png)
 
 ## 1971年11月15日：4004
 

@@ -5,6 +5,7 @@ categories: Linux内核
 tags:
   - icmpv6
   - nd
+typora-root-url: ../../../source
 ---
 
 ## IPv6地址

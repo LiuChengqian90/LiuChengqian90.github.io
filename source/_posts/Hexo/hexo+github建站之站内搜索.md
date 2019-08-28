@@ -5,6 +5,7 @@ categories: Hexo
 tags:
   - local search
   - algolia
+typora-root-url: ../../../source
 ---
 
 随着站内文章数量增加，即使是作者本人查询也是比较困难。而“站内搜索”功能提供了一条便捷之路。

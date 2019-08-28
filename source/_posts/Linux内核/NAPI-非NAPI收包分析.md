@@ -4,6 +4,7 @@ date: 2018-01-07 21:48:00
 categories: Linux内核
 tags:
   - NAPI
+typora-root-url: ../../../source
 ---
 
 基于 kernel 3.10.105 分析。

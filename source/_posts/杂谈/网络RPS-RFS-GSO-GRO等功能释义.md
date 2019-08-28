@@ -13,6 +13,7 @@ tags:
   - UFO
   - LRO
   - GRO
+typora-root-url: ../../../source
 ---
 
  内核代码版本号为 3.10.105。
