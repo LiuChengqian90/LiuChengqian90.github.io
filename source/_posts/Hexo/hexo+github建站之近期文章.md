@@ -10,7 +10,7 @@ tags:
 
 ## sidebar文件
 
-在`layout/_macro/sidebar.swig`文件`{% if theme.links %}`前加入以下代码
+在`layout/_macro/sidebar.swig`文件`if theme.links`前加入以下代码
 
 ```json
 {% if theme.recent_posts %}
