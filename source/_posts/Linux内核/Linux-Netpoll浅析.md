@@ -183,7 +183,7 @@ out:
 ### 收包-rx
 
 ```c
-static inline int netpoll_recßeive_skb(struct sk_buff *skb)
+static inline int netpoll_receive_skb(struct sk_buff *skb)
 {
     //NAPI部分之前的文章已经写过，不在分析。
     //现在NETPOLL 基本在 NAPI中调用。
