@@ -6,10 +6,12 @@
     "version": "3.9.0"
   },
   "dependencies": {
+    "babel-runtime": "^6.26.0",
     "braces": "^3.0.2",
     "core-js": "^3.1.4",
     "eslint": "^6.1.0",
     "eslint-utils": "^1.4.2",
+    "glob": "^7.1.4",
     "gulp-htmlclean": "^2.7.22",
     "gulp-htmlmin": "^5.0.1",
     "gulp-minify-css": "^1.2.4",
@@ -26,6 +28,7 @@
     "hexo-generator-json-content": "^4.1.6",
     "hexo-generator-sitemap": "^1.2.0",
     "hexo-generator-tag": "^0.2.0",
+    "hexo-leancloud-counter-security": "^1.4.1",
     "hexo-renderer-ejs": "^0.3.1",
     "hexo-renderer-marked": "^1.0.1",
     "hexo-renderer-stylus": "^0.3.3",
@@ -34,7 +37,8 @@
     "install": "^0.13.0",
     "lodash.template": "^4.5.0",
     "npm": "^6.10.2",
-    "optional": "^0.1.4"
+    "optional": "^0.1.4",
+    "qs": "^6.9.0"
   },
   "devDependencies": {
     "gulp": "^4.0.2",
