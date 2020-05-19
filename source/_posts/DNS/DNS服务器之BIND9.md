@@ -99,6 +99,7 @@ YUM安装后，bind9整体配置文件放于`/etc/`目录
            type master;
            file "test.com.zone";
            allow-update { none; };
+   };
    ```
 
    `type master` - 本机是 `test.com`的主服务器；
