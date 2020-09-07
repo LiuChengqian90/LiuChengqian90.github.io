@@ -7,7 +7,7 @@ tags:
 ---
 
 增加近期文章显示，直接修改主题`sidebar.swig`文件即可。
-
+<!--more-->
 ## sidebar文件
 
 在`layout/_macro/sidebar.swig`文件`if theme.links`前加入以下代码

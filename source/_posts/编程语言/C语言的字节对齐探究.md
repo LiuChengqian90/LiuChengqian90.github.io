@@ -7,7 +7,7 @@ tags:
 ---
 
 环境如下（下文所有涉及类型长度都是以此环境为依据）：
-
+<!--more-->
 ```shell
 # uname  -a
 2.6.32-696.el6.i686 #1 SMP Tue Mar 21 18:53:30 UTC 2017 i686 i686 i386 GNU/Linux

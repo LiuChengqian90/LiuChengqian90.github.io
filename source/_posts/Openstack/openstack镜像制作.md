@@ -10,7 +10,7 @@ tags:
 本文介绍如何将一个iso镜像制作为openstack启动镜像。iso镜像以 CentOS-6.9-i386-minimal.iso 为例，其他centos镜像可去[官网](https://www.centos.org/download/)下载。 
 
 ## 环境准备
-
+<!--more-->
 制作环境为物理机或虚拟机，但需要需要cpu支持intel VT等硬件虚拟化功能。最好与制作镜像系统的系统，版本可不一样，这个非硬性要求，凭个人习惯。
 
 判断是否支持虚拟化功能命令为：

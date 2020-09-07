@@ -10,7 +10,7 @@ tags:
 在Intel处理器上，KVM使用Intel的vmx(virtul machine eXtensions)来提高虚拟机性能，即硬件辅助虚拟化技术。
 
 那么如果在处理器中的启动的虚拟机也想使用vmx技术，应该如何处理？此时，就需要开启嵌套式虚拟nested。nested是一个可通过内核参数来启用的功能。它能够使一台虚拟机具有物理机CPU特性,支持vmx或者svm(AMD)硬件虚拟化。
-
+<!--more-->
 ## 服务器配置
 
 1. 服务器CPU需要支持 vmx(Intel架构) 或 svm(AMD架构)。

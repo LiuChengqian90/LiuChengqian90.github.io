@@ -10,7 +10,7 @@ typora-root-url: ../../../source
 Tips:系统环境为 Ubuntu 16.04，centos系统在namespace支持方面有些问题。
 
 Namespace(命名空间)是一种纯软件方式的资源隔离方案，是Linux Container的基础，也是Docker实现的基础之一。
-
+<!--more-->
 Linux内核中提供了6种namespace隔离的系统调用，由带有CLONE_NEW*标志的clone()所创建。这些标志如下表所示：
 
 | Namespace | 系统调用参数        | 值          | 隔离内容                                     |

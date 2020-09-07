@@ -8,7 +8,7 @@ tags:
 ---
 
 [BIND](https://zh.wikipedia.org/wiki/BIND)（Berkeley Internet Name Domain），是现今互联网上最常使用的DNS软件，使用BIND作为服务器软件的DNS服务器约占所有DNS服务器的九成。BIND现在由互联网系统协会（Internet Systems Consortium）负责开发与维护。
-
+<!--more-->
 ## 简单安装
 
 **系统环境**

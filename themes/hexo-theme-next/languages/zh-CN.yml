@@ -1,4 +1,5 @@
 ---
+name: 简体中文
 title:
   archive: 归档
   category: 分类
@@ -29,7 +30,6 @@ post:
   read_more: 阅读全文
   untitled: 未命名
   sticky: 置顶
-  toc_empty: 此文章未包含目录
   views: 阅读次数
   comments_count: 评论数
   related_posts: 相关文章
@@ -46,7 +46,6 @@ page:
   tags: 标签
 footer:
   powered: "由 %s 强力驱动"
-  theme: 主题
   total_views: 总访问量
   total_visitors: 总访客量
 counter:
@@ -85,8 +84,10 @@ reward:
   donate: 打赏
   wechatpay: 微信支付
   alipay: 支付宝
+  paypal: 贝宝
   bitcoin: 比特币
-gitmentbutton: 显示 Gitment 评论
+follow_me:
+  welcome: 欢迎关注我的其它发布渠道
 accessibility:
   nav_toggle: 切换导航栏
   prev_page: 上一页

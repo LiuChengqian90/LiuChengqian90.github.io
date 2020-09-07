@@ -10,7 +10,7 @@ typora-root-url: ../../../source
 ## 确认收录
 
 确认网站是否被某搜索引擎收录的方法为，在其搜索框输入
-
+<!--more-->
 ```shell
 site:website_url
 ```

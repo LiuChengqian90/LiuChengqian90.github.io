@@ -7,7 +7,7 @@ typora-root-url: ../../../source
 ---
 
 ELF(Executable and Linkable Format)是一种用于二进制文件、可执行文件、目标代码、共享库和核心转储的格式文件，是UNIX系统实验室（USL）作为应用程序二进制接口（Application Binary Interface，ABI）而开发和发布的，也是Linux的主要可执行文件格式。
-
+<!--more-->
 ## ELF文件类型
 
 ELF 格式的文件可归为如下4类：

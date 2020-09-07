@@ -11,7 +11,7 @@ typora-root-url: ../../../source
 阅读本文最好有内核网络源码基础。
 
 本文源码基于Linxu 3.10。
-
+<!--more-->
 # Netfilter
 
 Netfilter是Linux 2.4.x引入的一个子系统，提供一整套的hook函数的管理机制，使得诸如数据包过滤、网络地址转换(NAT)和基于协议类型的连接跟踪成为了可能。

@@ -8,7 +8,7 @@ tags:
 ---
 
 ## dmidecode命令
-
+<!--more-->
 `dmidecode`命令用来查看硬件信息。
 
 ```shell

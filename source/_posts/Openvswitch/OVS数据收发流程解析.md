@@ -13,7 +13,7 @@ typora-root-url: ../../../source
 ovs版本为 2.8.2。
 
 ## OVS整体架构
-
+<!--more-->
 OVS架构图如下，具体每个部件功能不具体分析，本文主要涉及内核部分。
 
 ![OVS内部结构](/images/OVS数据收发流程解析/OVS内部结构.png)

@@ -11,7 +11,7 @@ typora-root-url: ../../../source
 Mac原生的终端支持的操作太少，应该不少人都换成了iTerm2，关于iTerm2的好处，请点击[这里](https://www.zhihu.com/question/27447370)。
 
 但是，利用iTerm2远程设备，需要与本机传输文件时，如果不配置`lrzsz`，即使远程设备安装了`lrzsz`，此功能也无法使用。
-
+<!--more-->
 ## 安装
 
 1. homebrew
