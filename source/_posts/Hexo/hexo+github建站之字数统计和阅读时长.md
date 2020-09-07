@@ -8,7 +8,7 @@ tags:
 ---
 
 新版的HEXO NEXT（5.1.4）主题，已经集成了`hexo-wordcount`插件，因此只需要进行简单的几部配置即可。
-
+<!--more-->
 ## 安装
 
 ```shell

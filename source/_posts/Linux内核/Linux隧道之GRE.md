@@ -10,7 +10,7 @@ typora-root-url: ../../../source
 ## 协议简介
 
 GRE（Generic Routing Encapsulation，通用路由封装）协议是对某些网络层协议（如IP和IPX）的数据报文进行封装，使这些被封装的数据报文能够在另一个网络层协议（如IP）中传输。GRE采用了Tunnel（隧道）技术，是VPN（Virtual Private Network）的第三层隧道协议。
-
+<!--more-->
 Tunnel是一个虚拟的点对点的连接，提供了一条通路使封装的数据报文能够在这个通路上传输，并且在一个Tunnel的两端分别对数据报进行封装及解封装。
 
 ### 报文格式

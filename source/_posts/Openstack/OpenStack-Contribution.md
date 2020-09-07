@@ -11,7 +11,7 @@ typora-root-url: ../../../source
 ## Launchpad注册
 
 Launchpad 是 OpenStack 用来托管其所有项目的位置。
-
+<!--more-->
 请访问 [Launchpad 登录页面](https://launchpad.net/+login)，使用您的电子邮件地址进行注册，并为自己选择一个便于记忆的 Launchpad ID。然后访问 https://launchpad.net/~*LaunchpadID*，使用该页上的说明上传您的 SSH 公钥（用哪个本地环境进行开发就上传哪个 SSH公钥，可上传多个）。
 
 例如，我的 Launchpad id 是 liuchengqian90，因此我将访问 https://launchpad.net/~liuchengqian90。

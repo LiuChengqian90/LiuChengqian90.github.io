@@ -10,7 +10,7 @@ typora-root-url: ../../../source
  此文基于内核 3.10.105 分析linux内核中vxlan接口流量路径。主要是对报文流程内函数进行分析，所以代码居多。
 
 ## 基本报文流程回顾
-
+<!--more-->
 已经知道vxlan是 MAC IN UDP中的封装，因此，在解封装之前，一切按照原有流程走，在此复习一下（驱动层的数据处理这次不再解析，直接从__netif_receive_skb_core开始）：
 
 1. __netif_receive_skb_core

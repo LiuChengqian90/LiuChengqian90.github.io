@@ -8,7 +8,7 @@ typora-root-url: ../../../source
 ---
 
 基于 kernel 3.10.105 分析。
-
+<!--more-->
 ## softnet_data
 
 每个CPU都有队列，用来接收进来的帧。因为每个CPU都有其数据结构用来处理入口和出口流量，因此，不同CPU之间没必要使用上锁机制。此队列的数据结构softnet_data定义在`include/linux/netdevice.h`中，如下所示：

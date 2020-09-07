@@ -8,7 +8,7 @@ tags:
 ---
 
 内核主要通过Makefile把整个内核里的文件联系起来进行编译，最后得到内核镜像文件vmlinux。顶层Makefile文件多达1500行，本文仅分析其中比较重要的代码以概括内核编译流程。
-
+<!--more-->
 ```makefile
 include $(srctree)/arch/$(SRCARCH)/Makefile
 …………

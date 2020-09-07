@@ -21,7 +21,7 @@ typora-root-url: ../../../source
 ## 释义与代码分析
 
 ### RSS
-
+<!--more-->
 RSS(Receive Side Scaling)是一种能够在多处理器系统下使接收报文在多个CPU之间高效分发的网卡驱动技术。
 
 - 网卡对接收到的报文进行解析，获取IP地址、协议和端口五元组信息。

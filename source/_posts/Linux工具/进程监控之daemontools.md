@@ -13,7 +13,7 @@ typora-root-url: ../../../source
 Daemontools是svscanboot，svscan，supervise，svc，svok，svstat等一系列工具的合集。其中，`supervise`是其中的核心工具。
 
 对于使用Daemontools的优点可以参考[Service creation](http://cr.yp.to/daemontools/faq/create.html#why)。
-
+<!--more-->
 ## 安装
 
 参考[官网教程](https://cr.yp.to/daemontools.html) 及 [Linux命令帮助](https://linux.cn/man/man8/svscanboot.8.html)。

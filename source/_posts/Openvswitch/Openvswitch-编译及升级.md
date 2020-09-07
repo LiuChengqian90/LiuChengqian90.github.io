@@ -10,6 +10,7 @@ typora-root-url: ../../../source
 ## 编译安装
 
 参照官网，也查了些资料，编译期间出现些问题，先将正确的流程及问题解决方法记录如下。
+<!--more-->
 
 - Kernel 版本为 3.10.0-693.11.1.el7.x86_64 。内核与ovs关系可参考 [release](http://docs.openvswitch.org/en/latest/faq/releases/?highlight=releases)。
 

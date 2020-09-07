@@ -11,6 +11,8 @@ tags:
 
 若显示`ping`的回显时间，此命令也提供了参数 `-D`来回显时间戳。
 
+<!--more-->
+
 ```shell
 # ping baidu.com -D
 PING baidu.com (220.181.57.216) 56(84) bytes of data.

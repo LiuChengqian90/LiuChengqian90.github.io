@@ -7,6 +7,7 @@ tags:
 ---
 
 Python中pdb是一种比较好用的调试工具，其设置断点方法如下
+<!--more-->
 
 ```python
 __import__('pdb').set_trace()

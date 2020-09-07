@@ -7,8 +7,8 @@ tags:
 ---
 
 
-
 ### 删除列表中的重复的dict
+<!--more-->
 
 ```python
 [dict(t) for t in set([tuple(d.items()) for d in l])]
