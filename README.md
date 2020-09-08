@@ -33,6 +33,13 @@ Centos 安装 npm
 1. 使用 git clone git@github.com:LiuChengqian90/LiuChengqian90.github.io.git 拷贝仓库（默认分支为hexo）；
 2. 在本地新拷贝的 LiuChengqian90.github.io 文件夹下通过Git bash依次执行下列指令：npm install hexo; npm install hexo-cli; npm install; npm install hexo-deployer-git（记得，不需要hexo init这条指令）。
 
-参考资料：
+参考资料：https://www.zhihu.com/question/21193762
 
-[知乎参考](https://www.zhihu.com/question/21193762)
+单机调试：
+hexo clean; hexo g; gulp; hexo s;
+
+发布：
+export HEXO_ALGOLIA_INDEXING_KEY=f498f96ca58f4a1f7e0e1ceced80fcf2
+hexo clean; hexo g; gulp; hexo algolia; hexo d;
+
+if algolia failed , try more times.
