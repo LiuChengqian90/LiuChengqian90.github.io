@@ -3,10 +3,13 @@ title: Docker简介
 date: 2020-11-16 11:05:19
 categories:
 tags:
+  - docker
 typora-root-url: ../../../source
 ---
 
 旨在记录学习docker的搭建过程，个人使用。
+
+<!--more-->
 
 # Docker是啥
 
@@ -438,15 +441,172 @@ $ docker import http://example.com/exampleimage.tgz example/imagerepo
 
 删除容器使用 **docker rm** 命令：
 
+```shell
+$ docker rm -f 8729a8ba0385
 ```
 
+可以利用下面的命令清理掉所有处于**终止状态**的容器。
+
+```shell
+$ docker container prune
 ```
-
-
 
 
 
 ## 镜像使用
+
+当运行容器时，使用的镜像如果在本地中不存在，docker 就会自动从 docker 镜像仓库中下载，默认是从 Docker Hub 公共镜像源下载。
+
+### 列出镜像列表
+
+可以使用 **docker images** 来列出本地主机上的镜像。
+
+```shell
+$ docker images 
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+hello-world         latest              bf756fb1ae65        10 months ago       13.3kB
+centos              centos7.6.1810      f1cb7c7d58b7        20 months ago       202MB
+```
+
+- **REPOSITORY：**表示镜像的仓库源
+- **TAG：**镜像的标签
+- **IMAGE ID：**镜像ID
+- **CREATED：**镜像创建时间
+- **SIZE：**镜像大小
+
+同一仓库源可以有多个 TAG，代表这个仓库源的不同个版本，如 ubuntu 仓库源里，有 15.10、14.04 等多个不同的版本，我们使用 REPOSITORY:TAG 来定义不同的镜像。
+
+
+
+### 获取一个新的镜像
+
+当我们在本地主机上使用一个不存在的镜像时 Docker 就会自动下载这个镜像。如果我们想预先下载这个镜像，我们可以使用 docker pull 命令来下载它。
+
+```shell
+$ docker pull ubuntu:13.10
+```
+
+
+
+### 查找镜像
+
+我们可以从 Docker Hub 网站来搜索镜像，Docker Hub 网址为： **https://hub.docker.com/**
+
+我们也可以使用 docker search 命令来搜索镜像。比如我们需要一个 httpd 的镜像来作为我们的 web 服务。我们可以通过 docker search 命令搜索 httpd 来寻找适合我们的镜像。
+
+```shell
+$ docker search httpd
+```
+
+![docker-search-httpd.png](/images/Docker简介/docker-search-httpd.png)
+
+**NAME:** 镜像仓库源的名称
+
+**DESCRIPTION:** 镜像的描述
+
+**OFFICIAL:** 是否 docker 官方发布
+
+**stars:** 类似 Github 里面的 star，表示点赞、喜欢的意思。
+
+**AUTOMATED:** 自动构建。
+
+### 拖取镜像
+
+我们决定使用上图中的 "centos/httpd"镜像，使用命令 docker pull 来下载镜像。
+
+```shell
+$ docker pull centos/httpd
+```
+
+
+
+### 删除镜像
+
+镜像删除使用 **docker rmi** 命令，比如我们删除 hello-world 镜像：
+
+```shell
+$ docker rmi hello-world
+```
+
+### 创建镜像
+
+当我们从 docker 镜像仓库中下载的镜像不能满足我们的需求时，我们可以通过以下两种方式对镜像进行更改。
+
+- 从已经创建的容器中更新镜像，并且提交这个镜像
+- 使用 Dockerfile 指令来创建一个新的镜像
+
+#### 更新镜像
+
+创建一个容器
+
+```shell
+$ docker run -ti centos:centos7.6.1810 /bin/bash
+```
+
+在运行的容器内使用 **yum update -y** 命令进行更新。
+
+在完成操作之后，输入 exit 命令来退出这个容器。
+
+此时 ID 为 2a11ba047fc9 的容器，是按我们的需求更改的容器。我们可以通过命令 docker commit 来提交容器副本。
+
+```shell
+$ docker commit -m="has update" -a="lcq" 2a11ba047fc9 lcq/centos:v2
+sha256:7141a1f72c8a2c42067cae92e69662953450d954f18fe16fe725d1f830ce7e53
+```
+
+- **-m:** 提交的描述信息
+- **-a:** 指定镜像作者
+- **e218edb10161：**容器 ID
+- **runoob/ubuntu:v2:** 指定要创建的目标镜像名
+
+我们可以使用 **docker images** 命令来查看我们的新镜像 **lcq/centos:v2**。
+
+#### 构建镜像
+
+我们使用命令 **docker build** ， 从零开始来创建一个新的镜像。为此，我们需要创建一个 Dockerfile 文件，其中包含一组指令来告诉 Docker 如何构建我们的镜像。
+
+每一个指令都会在镜像上创建一个新的层，每一个指令的前缀都必须是大写的。
+
+第一条FROM，指定使用哪个镜像源
+
+RUN 指令告诉docker 在镜像内执行命令，安装了什么。。。
+
+然后，我们使用 Dockerfile 文件，通过 docker build 命令来构建一个镜像。
+
+```shell
+$ cat Dockerfile
+FROM    lcq/centos:v2
+MAINTAINER      LCQ "lcq@god.com"
+
+RUN     /bin/echo 'root:123456' |chpasswd
+RUN     useradd lcq
+RUN     /bin/echo 'lcq:123456' |chpasswd
+RUN     /bin/echo -e "LANG=\"en_US.UTF-8\"" >/etc/default/local
+EXPOSE  22
+EXPOSE  80
+CMD     /usr/sbin/sshd -D
+```
+
+
+
+![docker-build-t](/images/Docker简介/docker-build-t.png)
+
+参数说明：
+
+- **-t** ：指定要创建的目标镜像名
+- **.** ：Dockerfile 文件所在目录，可以指定Dockerfile 的**绝对路径**
+
+
+
+#### 设置镜像标签
+
+我们可以使用 docker tag 命令，为镜像设置一个新的标签。
+
+```shell
+$ docker tag 8f03ca40114f lcq/centos:dev
+```
+
+
 
 ## 容器连接
 

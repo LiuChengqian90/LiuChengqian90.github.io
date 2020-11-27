@@ -46,6 +46,7 @@ for $inject_mixin in hexo-config('injects.mixin')
 for $inject_style in hexo-config('injects.style')
   @import $inject_style;
 
+// background begin
 body {
     background:url(/images/background/background1.jpg);
     background-repeat: no-repeat;
@@ -62,3 +63,4 @@ body {
 .header-inner {
    background: rgba(255, 255, 255, 0.9) !important;
 }
+// background end
