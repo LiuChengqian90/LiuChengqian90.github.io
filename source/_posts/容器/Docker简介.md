@@ -610,6 +610,171 @@ $ docker tag 8f03ca40114f lcq/centos:dev
 
 ## 容器连接
 
+容器中可以运行一些网络应用，要让外部也可以访问这些应用，可以通过 **-P** 或 **-p** 参数来指定端口映射。
+
+### 网络端口映射
+
+```shell
+$ docker run -d -P training/webapp python app.py
+f3a18ed1f29ed7ad56730742878b30017224e1c17893dc438095a762bcd42e1c
+```
+
+我们可以指定容器绑定的网络地址，比如绑定 127.0.0.1。
+
+我们使用 **-P** 参数创建一个容器，使用 **docker ps** 可以看到容器端口 5000 绑定主机端口 32768。
+
+![docker-port-map-1.png](/images/Docker简介/docker-port-map-1.png)
+
+我们也可以使用 **-p** 标识来指定容器端口绑定到主机端口。
+
+两种方式的区别是:
+
+- **-P :**是容器内部端口**随机**映射到主机的高端口。
+- **-p :** 是容器内部端口绑定到**指定**的主机端口。
+
+```shell
+$ docker run -d -p 5001:5000 training/webapp python app.py
+12b08fe445b973a4a9e30271d7e26a2274383a45393a883bd4db0a0fa39b1a28
+```
+
+![docker-port-map-2.png](/images/Docker简介/docker-port-map-2.png)
+
+
+
+另外，我们可以指定容器绑定的网络地址，比如绑定 127.0.0.1。
+
+```shell
+$ docker run -d -p 127.0.0.1:5002:5000 training/webapp python app.py
+59fd11e7b66f5a4ee3d33d0af2ca506d53ddcbb0118965c47cbfd92e8b9a8ed4
+```
+
+![image-20201127193751627](/images/Docker简介/docker-port-map-3.png)
+
+这样我们就可以通过访问 127.0.0.1:5002 来访问容器的 5000 端口。
+
+上面的例子中，默认都是绑定 tcp 端口，如果要绑定 UDP 端口，可以在端口后面加上 **/udp**。
+
+```shell
+$ docker run -d -p 127.0.0.1:5000:5000/udp training/webapp python app.py
+```
+
+
+
+**docker port** 命令可以让我们快捷地查看端口的绑定情况。
+
+```shell
+$ docker port adoring_stonebraker 5000
+```
+
+![docker-port-map-4.png](/images/Docker简介/docker-port-map-4.png)
+
+
+
+### Docker 容器互联
+
+端口映射并不是唯一把 docker 连接到另一个容器的方法。
+
+docker 有一个连接系统允许将多个容器连接在一起，共享连接信息。
+
+docker 连接会创建一个父子关系，其中父容器可以看到子容器的信息。
+
+#### 容器命名
+
+当我们创建一个容器的时候，docker 会自动对它进行命名。另外，我们也可以使用 **--name** 标识来命名容器
+
+```shell
+$ docker run -d -P --name l_test training/webapp python app.py
+```
+
+#### 新建网络
+
+容器程序启动时会默认创建一个网桥docker0
+
+![docker-bridge-1.png](/images/Docker简介/docker-bridge-1.png)
+
+
+
+当然，也可以另建一个网桥
+
+```shell
+$ docker network create -d bridge test-net
+c090a0f56b323e04c3d2de27871bec7c759f1ead185dc3555fd8cb62f91d3a98
+```
+
+![image-20201128005910158](/images/Docker简介/docker-bridge-2.png)
+
+参数说明：
+
+**-d**：参数指定 Docker 网络类型，有 bridge、overlay。
+
+其中 overlay 网络类型用于 Swarm mode。
+
+#### 连接容器
+
+运行两个容器并连接到新建的 test-net 网络:
+
+```shell
+$ docker run -itd --name test1 --network test-net centos:centos7.6.1810 bash
+$ docker run -itd --name test2 --network test-net centos:centos7.6.1810 bash
+```
+
+![image-20201128010401053](/images/Docker简介/docker-bridge-3.png)
+
+用网络命令来进行连通性测试
+
+![image-20201128010837072](/images/Docker简介/docker-bridge-4.png)
+
+
+
+### 配置 DNS
+
+我们可以在宿主机的 /etc/docker/daemon.json 文件中增加以下内容来设置全部容器的 DNS：
+
+```json
+{
+  "dns" : [
+    "114.114.114.114",
+    "8.8.8.8"
+  ]
+}
+```
+
+配置完，需要重启 docker 才能生效。
+
+```shell
+$ docker run -it --rm  centos:centos7.6.1810  cat etc/resolv.conf
+```
+
+![image-20201128011512226](/images/Docker简介/docker-dns-1.png)
+
+**手动指定容器的配置**
+
+如果只想在指定的容器设置 DNS，则可以使用以下命令：
+
+```shell
+$ docker run -it --rm -h host_centos  --dns=114.114.114.114 --dns-search=baidu.com centos:centos7.6.1810
+```
+
+
+
+![image-20201128011711557](/images/Docker简介/docker-dns-2.png)
+
+参数说明：
+
+**--rm**：容器退出时自动清理容器内部的文件系统。
+
+**-h HOSTNAME 或者 --hostname=HOSTNAME**： 设定容器的主机名，它会被写到容器内的 /etc/hostname 和 /etc/hosts。
+
+**--dns=IP_ADDRESS**： 添加 DNS 服务器到容器的 /etc/resolv.conf 中，让容器用这个服务器来解析所有不在 /etc/hosts 中的主机名。
+
+**--dns-search=DOMAIN**： 设定容器的搜索域，当设定搜索域为 .example.com 时，在搜索一个名为 host 的主机时，DNS 不仅搜索 host，还会搜索 host.example.com。
+
+
+
+如果在容器启动时没有指定 **--dns** 和 **--dns-search**，Docker 会默认用宿主主机上的 /etc/resolv.conf 来配置容器的 DNS。
+
+
+
 ## 仓库管理
 
 ## Dockerfile
