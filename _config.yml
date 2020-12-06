@@ -86,7 +86,7 @@ deploy:
   repository: git@github.com:LiuChengqian90/LiuChengqian90.github.io.git
   branch: master
 - type: git
-  repository: git@git.coding.net:liuchengqian90/liuchengqian90.git
+  repository: git@e.coding.net:liuchengqian90/liuchengqian90.git
   branch: master 
 #- type: leancloud_counter_security_sync
 #- type: git
