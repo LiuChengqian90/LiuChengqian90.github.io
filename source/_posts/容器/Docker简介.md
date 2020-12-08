@@ -1940,8 +1940,6 @@ docker-machine version 0.16.0, build 9371605
 
 更多使用可以参考 [Docker Machine 是什么？](https://www.cnblogs.com/sparkdev/p/7044950.html) 。
 
-
-
 #### 列出可用的机器
 
 可以看到目前只有这里默认的 default 虚拟机。
@@ -1957,6 +1955,8 @@ $ docker-machine ls
 ```shell
 $ docker-machine create --driver virtualbox test
 ```
+
+
 
 **Note:**
 
@@ -2036,7 +2036,7 @@ $ docker-machine stop test
 
 #### 启动机器
 
-```
+```shell
 $ docker-machine start test
 ```
 
@@ -2044,7 +2044,7 @@ $ docker-machine start test
 
 #### 进入机器
 
-```
+```shell
 $ docker-machine ssh test
 ```
 
@@ -2054,7 +2054,7 @@ $ docker-machine ssh test
 
 - **docker-machine active**：查看当前激活状态的 Docker 主机。
 
-  ```
+  ```shell
   $ docker-machine ls
   
   NAME      ACTIVE   DRIVER         STATE     URL
@@ -2112,37 +2112,352 @@ $ docker-machine ssh test
 
 
 
-
-
-## Swarm 集群管理
-
-
-
 # Docker实例
 
-安装Centos
 
-安装Nginx
 
-安装Node.js
+## 安装Centos
 
-安装PHP
+CentOS（Community Enterprise Operating System）是 Linux 发行版之一，它是来自于 Red Hat Enterprise Linux(RHEL) 依照开放源代码规定发布的源代码所编译而成。由于出自同样的源代码，因此有些要求高度稳定性的服务器以 CentOS 替代商业版的 Red Hat Enterprise Linux 使用。
 
-安装MySQL
+### 查看可用的 CentOS 版本
 
-安装Tomcat
+访问 CentOS 镜像库地址：https://hub.docker.com/_/centos?tab=tags&page=1。
 
-安装Python
+可以通过 Sort by 查看其他版本的 CentOS 。默认是最新版本 centos:latest 。
 
-安装Redis
-
-安装MongoDB
-
-安装Apache
+![image-20201208105938713](/images/Docker简介/docker-hub-centos.png)
 
 
 
-# Docker资源汇总
+### 拉取指定版本的 CentOS 镜像
+
+这里我们安装指定版本为例(centos8.3.2011)
+
+```shell
+$ docker pull centos:centos8.3.2011
+```
+
+![image-20201208110605821](/images/Docker简介/docker-centos-pull.png)
+
+### 查看本地镜像
+
+```shell
+$ docker images
+```
+
+![image-20201208110634842](/images/Docker简介/docker-centos-images.png)
+
+### 运行容器
+
+```shell
+$ docker run -itd --name centos-test centos:centos8.3.2011
+```
+
+![image-20201208110711780](/images/Docker简介/docker-centos-run.png)
+
+## 安装Nginx
+
+Nginx 是一个高性能的 HTTP 和反向代理 web 服务器，同时也提供了 IMAP/POP3/SMTP 服务 。
+
+### 查看可用的 Nginx 版本
+
+除类似centos官网查找外，还可以用search命令进行查找镜像
+
+```shell
+$ docker search nginx
+```
+
+![image-20201208110927695](/images/Docker简介/docker-search-nginx.png)
+
+### 取最新版的 Nginx 镜像
+
+```shell
+$ docker pull nginx:latest
+```
+
+![image-20201208111135253](/images/Docker简介/docker-pull-nginx.png)
+
+### 运行容器
+
+```shell
+$ docker run --name nginx-test -p 8080:80 -d nginx:latest
+```
+
+参数说明：
+
+- **--name nginx-test**：容器名称。
+- **-p 8080:80**： 端口进行映射，将本地 8080 端口映射到容器内部的 80 端口。
+- **-d nginx**： 设置容器在在后台一直运行。
+
+
+
+我们可以通过浏览器可以直接访问本机 8080 端口的 nginx 服务：
+
+![image-20201208111444124](/images/Docker简介/docker-nginx-google.png)
+
+## 安装Node.js
+
+Node.js 是一个基于 Chrome V8 引擎的 JavaScript 运行环境，是一个让 JavaScript 运行在服务端的开发平台。
+
+```shell
+$ docker pull node:lastest
+$ docker run -itd --name node-test node
+$ docker exec -it node-test /bin/bash
+```
+
+![image-20201208112157069](/images/Docker简介/docker-node.png)
+
+
+
+## 安装PHP
+
+PHP 是一种创建动态交互性站点的强有力的服务器端脚本语言。
+
+```shell
+$ docker pull php:5.6-fpm
+$ docker images
+```
+
+![image-20201208113144791](/images/Docker简介/docker-php-1.png)
+
+
+
+### Nginx + PHP 部署
+
+启动php
+
+```shell
+$ docker run --name  myphp-fpm -v ~/nginx/www:/www  -d php:5.6-fpm
+```
+
+- **-v ~/nginx/www:/www** : 将主机中项目的目录 www 挂载到容器的 /www
+
+创建 ~/nginx/conf/conf.d 目录并在此目录下添加 **test-php.conf** 文件
+
+```shell
+$ mkdir ~/nginx/conf/conf.d -p
+$ cat ~/nginx/conf/conf.d/test-php.conf
+server {
+    listen       80;
+    server_name  localhost;
+
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm index.php;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass   php:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  /www/$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+}
+```
+
+- **php:9000**: 表示 php-fpm 服务的 URL，下面我们会具体说明。
+- **/www/**: 是 **myphp-fpm** 中 php 文件的存储路径，映射到本地的 ~/nginx/www 目录。
+
+
+
+启动 nginx：
+
+```shell
+$ docker run --name runoob-php-nginx -p 8083:80 -d \
+    -v ~/nginx/www:/usr/share/nginx/html:ro \
+    -v ~/nginx/conf/conf.d:/etc/nginx/conf.d:ro \
+    --link myphp-fpm:php \
+    nginx:latest
+```
+
+- **-p 8083:80**: 端口映射，把 **nginx** 中的 80 映射到本地的 8083 端口。
+- **~/nginx/www**: 是本地 html 文件的存储目录，/usr/share/nginx/html 是容器内 html 文件的存储目录。
+- **~/nginx/conf/conf.d**: 是本地 nginx 配置文件的存储目录，/etc/nginx/conf.d 是容器内 nginx 配置文件的存储目录。
+- **--link myphp-fpm:php**: 把 **myphp-fpm** 的网络并入 ***nginx\***，并通过修改 **nginx** 的 /etc/hosts，把域名 **php** 映射成 127.0.0.1，让 nginx 通过 php:9000 访问 php-fpm。
+
+![image-20201208113850478](/images/Docker简介/docker-php-2.png)
+
+
+
+接下来我们在 ~/nginx/www 目录下创建 index.php，代码如下：
+
+```
+<?php
+echo phpinfo();
+?>
+```
+
+浏览器打开 主机地址:8083/index.php，显示如下：
+
+![image-20201208114343548](/images/Docker简介/docker-php-3.png)
+
+
+
+## 安装MySQL
+
+MySQL 是世界上最受欢迎的开源数据库。凭借其可靠性、易用性和性能，MySQL 已成为 Web 应用程序的数据库优先选择。
+
+```shell
+$ docker search mysql
+$ docker pull mysql:latest
+$ docker run -itd --name mysql-test -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql
+```
+
+- **-p 3306:3306** ：映射容器服务的 3306 端口到宿主机的 3306 端口，外部主机可以直接通过 **宿主机ip:3306** 访问到 MySQL 的服务。
+- **MYSQL_ROOT_PASSWORD=123456**：设置 MySQL 服务 root 用户的密码。
+
+本机可以通过 root 和密码 123456 访问 MySQL 服务。
+
+```shell
+$ mysql -h localhost -uroot -p
+```
+
+
+
+**NOTE:**
+
+1. Can't connect to local MySQL server through socket '/var/lib/mysql/mysql.sock'
+
+   根据报错提示，是本地mysql连接服务器时，没有找到/var/lib/mysql/mysql.sock文件。那么从这入手，我们看到mysql容器中的服务器启动后的mysql.sock文件在哪。
+
+   进入容器查看
+
+   ![image-20201208140256510](/images/Docker简介/docker-mysql-1.png)
+
+   ```shell
+   [mysqld]
+   pid-file        = /var/run/mysqld/mysqld.pid
+   socket          = /var/run/mysqld/mysqld.sock
+   datadir         = /var/lib/mysql
+   secure-file-priv= NULL
+   
+   # Custom config should go here
+   !includedir /etc/mysql/conf.d/
+   ```
+
+   需要将配置文件中的相关目录挂载到主机，同时保证容器有权限访问本地挂载的目录，以挂载到本地 `/opt/data/mysql`为例
+
+   ```shell
+   $ sudo chown -R polkitd:input /opt/data/mysql
+   $ docker run --name=mysql -it -p 3306:3306 \
+   		-v /opt/data/mysql/mysqld:/var/run/mysqld \
+   		-v /opt/data/mysql/db:/var/lib/mysql \
+   		-v /opt/data/mysql/conf:/etc/mysql/conf.d \
+   		-v /opt/data/mysql/files:/var/lib/mysql-files \
+   		-e MYSQL_ROOT_PASSWORD=123456 --privileged=true -d mysql
+   ```
+
+   删除容器，重新创建即可。
+
+2. Access denied for user 'root'@'localhost'
+
+   本地主机连接容器的mysql时，需要查到 /var/lib/mysql/mysql.sock。启动mysql容器后，在/opt/data/mysql/mysqld目录下有一个mysqld.sock。我们要把这个文件链接到本地主机的var/lib/myql目录中。
+
+   ```shell
+   $ sudo ln -s /opt/data/mysql/mysqld/mysqld.sock /var/lib/mysql/mysql.sock #/var/lib/mysql 没有则手动创建
+   ```
+
+3. Authentication plugin 'caching_sha2_password' cannot be loaded
+
+   本机需要安装mysql-community-client，以centos 7为例
+
+   ```shell
+   $ wget http://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm
+   $ sudo rpm -ivh mysql57-community-release-el7-9.noarch.rpm
+   $ yum install mysql-community-client.x86_64
+   ```
+
+4. Access denied for user 'root'@'localhost'
+
+   进入mysql容器目录  `/etc/mysql/conf.d/`
+
+   或者，由于  `/etc/mysql/conf.d/`挂载到了本机 `/opt/data/mysql/conf`，所以也可以直接进入本机挂载目录
+
+   修改 **docker.cnf** 文件（没有则创建）为
+
+   ```shell
+   [mysqld]
+   skip-host-cache
+   skip-name-resolve
+   skip-grant-tables
+   ```
+
+以上最终修改后，记得重启mysql docker
+
+```shell
+$ docker restart $mysql_docker_id
+```
+
+![image-20201208141541588](/images/Docker简介/docker-mysql-2.png)
+
+
+
+## 安装Tomcat
+
+Tomcat是一个被广泛使用的Java WEB应用服务器。
+
+```shell
+$ docker pull tomcat:latest
+$ docker run --name tomcat -p 8080:8080  -d tomcat
+```
+
+
+
+进行访问的时候，有可能会出现  “404 NOT FOUND”
+
+此时，需要进入容器，将 `/usr/local/tomcat`目录下的 `webapps.dist` 命名为 `webapps`即可。
+
+![image-20201208151856425](/images/Docker简介/docker-tomcat-1.png)
+
+
+
+## 安装Redis
+
+Redis 是一个开源的使用 ANSI C 语言编写、支持网络、可基于内存亦可持久化的日志型、Key-Value 的 NoSQL 数据库，并提供多种语言的 API。
+
+```shell
+$ docker pull redis:latest
+$ docker run -itd --name redis-test -p 6379:6379 redis
+```
+
+
+
+![image-20201208152346484](/images/Docker简介/docker-redis-1.png)
+
+
+
+## 安装MongoDB
+
+MongoDB 是一个免费的开源跨平台面向文档的 NoSQL 数据库程序。
+
+```shell
+$ docker pull mongo:latest
+$ docker run -itd --name mongo -p 27017:27017 mongo --auth
+```
+
+- **--auth**：需要密码才能访问容器服务。
+
+![image-20201208152703078](/images/Docker简介/docker-mongodb-1.png)
+
+
+
+使用以下命令添加用户和设置密码，并且尝试连接。
+
+```shell
+$ docker exec -it mongo mongo admin
+# 创建一个名为 admin，密码为 123456 的用户。
+>  db.createUser({ user:'admin',pwd:'123456',roles:[ { role:'userAdminAnyDatabase', db: 'admin'},"readWriteAnyDatabase"]});
+# 尝试使用上面创建的用户信息进行连接。
+> db.auth('admin', '123456')
+```
+
+![image-20201208152754098](/images/Docker简介/docker-mongodb-2.png)
 
 
 
