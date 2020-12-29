@@ -1,0 +1,16 @@
+
+1. 导出容器
+docker export 1e560fca3906 > centos.tar
+
+2. 导入容器为镜像
+cat docker/centos.tar | docker import - test/centos:v1
+
+3. 镜像打tag
+
+docker tag centos:centos7.8 $username/centos:centos7.8
+docker push $username/centos:centos7.8
+
+规则修改
+iptables -A DOCKER -d 172.17.0.2/32 ! -i docker0 -o docker0 -p tcp -m tcp --dport 8000 -j ACCEPT
+iptables -A POSTROUTING -s 172.17.0.2/32 -d 172.17.0.2/32 -p tcp -m tcp --dport 8000 -j MASQUERADE -t nat
+iptables -A DOCKER ! -i docker0 -p tcp -m tcp --dport 8000 -j DNAT --to-destination 172.17.0.2:8000 -t nat
