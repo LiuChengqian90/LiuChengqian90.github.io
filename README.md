@@ -6,6 +6,8 @@ Centos 安装 npm
 # yum install -y nodejs
 ```
 
+参考资料：https://www.zhihu.com/question/21193762
+
 一、关于搭建的流程
 
 1. 创建仓库，liuchengqian90.github.io
@@ -37,8 +39,14 @@ Centos 安装 npm
 #install nmp
 
 curl -sL https://rpm.nodesource.com/setup_10.x | bash -
-yum install –y nodejs
+yum install –y nodejs autoconf automake
 node -v
+
+#clean npm
+rm node_modules package-lock.json* -rf;
+npm cache verify;
+npm i -g npm;
+npm i;
 
 #install hexo
 npm install -g hexo hexo-cli;
@@ -47,7 +55,10 @@ npm install hexo-deployer-git --save;
 npm install hexo-generator-feed --save;
 npm install hexo-generator-sitemap --save;
 
-参考资料：https://www.zhihu.com/question/21193762
+#install gulp
+npm install -g gulp gulp-cli;
+npm install gulp-htmlclean gulp-htmlmin gulp-minify-css gulp-uglify gulp-imagemin --save;
+
 
 单机调试：
 hexo clean; hexo g; gulp; hexo s;
