@@ -22,6 +22,7 @@
     "hexo-deployer-git": "^2.1.0",
     "hexo-generator-archive": "^1.0.0",
     "hexo-generator-category": "^1.0.0",
+    "hexo-generator-feed": "^3.0.0",
     "hexo-generator-index": "^2.0.0",
     "hexo-generator-json-content": "^4.2.3",
     "hexo-generator-sitemap": "^2.1.0",
@@ -34,6 +35,7 @@
     "hexo-symbols-count-time": "^0.7.1",
     "install": "^0.13.0",
     "lodash.template": "^4.5.0",
+    "mime": "^2.4.7",
     "npm": "^6.14.8",
     "optional": "^0.1.4",
     "qs": "^6.9.4"

@@ -7,8 +7,8 @@ const { iconText } = require('./common');
 
 // Add comment
 hexo.extend.filter.register('theme_inject', injects => {
-  let theme = hexo.theme.config;
-  if (!theme.disqus.enable || !theme.disqus.shortname) return;
+  const config = hexo.theme.config.disqus;
+  if (!config.enable || !config.shortname) return;
 
   injects.comment.raw('disqus', `
   <div class="comments">
@@ -18,24 +18,24 @@ hexo.extend.filter.register('theme_inject', injects => {
   </div>
   `, {}, {cache: true});
 
-  injects.bodyEnd.file('disqus', path.join(hexo.theme_dir, 'layout/_third-party/comments/disqus.swig'));
+  injects.bodyEnd.file('disqus', path.join(hexo.theme_dir, 'layout/_third-party/comments/disqus.njk'));
 
 });
 
 // Add post_meta
 hexo.extend.filter.register('theme_inject', injects => {
-  let theme = hexo.theme.config;
-  if (!theme.disqus.enable || !theme.disqus.shortname || !theme.disqus.count) return;
+  const config = hexo.theme.config.disqus;
+  if (!config.enable || !config.shortname || !config.count) return;
 
   injects.postMeta.raw('disqus', `
   {% if post.comments %}
   <span class="post-meta-item">
-    ${iconText('comment-o', 'disqus')}
+    ${iconText('far fa-comment', 'disqus')}
     <a title="disqus" href="{{ url_for(post.path) }}#disqus_thread" itemprop="discussionUrl">
       <span class="post-comments-count disqus-comment-count" data-disqus-identifier="{{ post.path }}" itemprop="commentCount"></span>
     </a>
   </span>
   {% endif %}
-  `, {}, {}, theme.disqus.post_meta_order);
+  `, {}, {});
 
 });

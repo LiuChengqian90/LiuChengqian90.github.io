@@ -1,23 +1,19 @@
-# pack-refs with: peeled fully-peeled sorted 
-d073fcf781d962dd061cf437963ac7e7054c9ebd refs/remotes/origin/font-refactoring
-6271fbe447bbe2303a1848d6e5b7974200b3d54e refs/remotes/origin/master
-88710eff863f7cff5f820687c248d275be542911 refs/remotes/origin/security-section
-92a571ef9e4570b9da07f1640003f9da717ef761 refs/remotes/origin/v6.x
-d00ecb04ef5eba8b225d59eeef775f92caea8a8d refs/tags/v6.0.0
-da9cdd295336d3bae9f82b068f1879e8c87a67da refs/tags/v6.0.1
-bf6d32449e647b3fd462b473116701ffaf1d0b76 refs/tags/v6.0.2
-b0b3b6f7898bd59a26df15ee75d96f2683e644ed refs/tags/v6.0.3
-7edf8947b375d6876a8359a4fbac5d85d8a28009 refs/tags/v6.0.4
-b856dc0beda415f327abf2368cd544685ed28067 refs/tags/v6.0.5
-29e2e590abf902a9dcfab47df8b8a46e060b2ee8 refs/tags/v6.0.6
-50d85ea184105882f19ca8aa700ab45eddb762f7 refs/tags/v6.1.0
-206d46393afcd1e38298b35548ab717f05c97a5d refs/tags/v6.2.0
-1f5643061ec5257269673bd6159403c24015c53d refs/tags/v6.3.0
-6ab2480e9f0a4cae0b390fd50f33535938dd6163 refs/tags/v6.4.0
-b5aa49d0317fa935f272eaa448552c1428cb8902 refs/tags/v6.4.1
-a54ec63c7ba4d31437895549558ad611fb8a097b refs/tags/v6.4.2
-91415d812823a9518815c45b7ceb596b8d2094ff refs/tags/v6.5.0
-5d677f45709457dcf6c6473eba2eee7ff7966f66 refs/tags/v6.6.0
-e4739cd7698b5ac74f61b2542d206062d4404d89 refs/tags/v6.7.0
-aad86c9577445647c14fd05216aa043c9886f84b refs/tags/v7.0.0
-1b376f824f0b9981b6c3cc09bfb9f00f33ea03c4 refs/tags/v7.0.1
+# pack-refs with: peeled fully-peeled 
+8e5d40fa37082dd5d3312ad2ac637c234c1efa7e refs/remotes/origin/i18n
+d6f7c51f6c13882986b1f51a2f673aa89bbd6d25 refs/remotes/origin/master
+9ea1b0daa10ea5138174a5b85a0d8b7e2fd86dcc refs/remotes/origin/renovate/actions-setup-node-2.x
+1ce68b1d0d6c89c90d9513777d7fdb9fdbc9377f refs/remotes/origin/renovate/eslint-7.x
+8a0b72121ba74d381989435f68b2b5828eb9c2ab refs/remotes/origin/renovate/hexo-5.x
+ef145fbe5adebccf77815a9feb68d62b1946dfb7 refs/remotes/origin/renovate/husky-4.x
+7c2aad39552ee1909e30c49a08a2333f0f443ad9 refs/remotes/origin/renovate/js-yaml-3.x
+2d16c0d3a14be2c7f2f94e2b0d124cfa11d4024c refs/remotes/origin/renovate/next-theme-eslint-config-0.x
+f27e45bcaecdfb6fb86187ff4d5eab024ec792c1 refs/tags/v8.0.0
+1e026c7c39a14e13a58001e1ee742273ec913b02 refs/tags/v8.0.0-rc.1
+^d6731e627fb5e24fd587132739dd0a75b3803be1
+e92a3d8cd6105615e6deb089337d296ef5cfcbf4 refs/tags/v8.0.0-rc.2
+036d2d305994e431e09bf76aba4ea302cd654be2 refs/tags/v8.0.0-rc.3
+53a220f3984f5b0e1691b9fa76531ddb402dd998 refs/tags/v8.0.0-rc.4
+74ccc182f3a9d661b30b4084b3ccf1d063a282d4 refs/tags/v8.0.0-rc.5
+460087d6f0ac4e0dc05cf0571ccc38ddf4c79f66 refs/tags/v8.0.1
+ffac31410007fa2e0a94ba821b7287ca86ba11eb refs/tags/v8.0.2
+7bf3e602a16949b430475f2583c86da624ea5301 refs/tags/v8.1.0
