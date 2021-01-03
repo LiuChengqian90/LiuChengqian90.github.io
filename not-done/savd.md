@@ -1,3 +1,20 @@
+docker Swarm 集群管理
+service 
+负载均衡
+
+Docker swarm中的LB和服务发现详解
+https://www.jianshu.com/p/c83a9173459f
+
+Docker的容器和服务之间的区别是啥？
+http://blog.smallerpig.com/difference-between-Docker-Service-and-Docker-Container.html
+
+nsenter
+https://staight.github.io/2019/09/23/nsenter%E5%91%BD%E4%BB%A4%E7%AE%80%E4%BB%8B/
+
+
+各种容器网络 
+https://feisky.gitbooks.io/sdn/content/container/
+
 etcd
 zookeeper
 redis
@@ -18,7 +35,7 @@ dhcperf
 
 无法设置MAC地址
 
-https://qiita.com/gzock/items/3732475ef97ee0536589
+https://qii.com/gzock/items/3732475ef97ee0536589
 
 https://blog.csdn.net/weixin_33676492/article/details/92821426
 
