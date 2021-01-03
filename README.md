@@ -59,7 +59,6 @@ npm install hexo-generator-sitemap --save;
 npm install -g gulp gulp-cli;
 npm install gulp-htmlclean gulp-htmlmin gulp-minify-css gulp-uglify gulp-imagemin --save;
 
-
 单机调试：
 hexo clean; hexo g; gulp; hexo s;
 
