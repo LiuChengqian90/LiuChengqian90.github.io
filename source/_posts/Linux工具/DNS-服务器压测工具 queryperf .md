@@ -1,7 +1,7 @@
 ---
 title: DNS 服务器压测工具 queryperf
 date: 2019-09-16 19:57:52
-categories:
+categories: Linux工具
 tags:
   - dns
   - queryperf

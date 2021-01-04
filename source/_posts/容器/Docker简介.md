@@ -1,7 +1,7 @@
 ---
 title: Docker简介
 date: 2020-11-16 11:05:19
-categories:
+categories: 容器
 tags:
   - docker
 typora-root-url: ../../../source

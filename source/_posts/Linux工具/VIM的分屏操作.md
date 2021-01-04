@@ -1,7 +1,7 @@
 ---
 title: VIM的分屏操作
 date: 2019-09-12 19:57:52
-categories:
+categories: Linux工具
 tags:
   - VIM
   - 分屏

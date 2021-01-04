@@ -2,7 +2,7 @@
 
 title: DNS详解
 date: 2019-06-23 15:34:32
-categories:
+categories: DNS
 tags:
   - dns
 typora-root-url: ../../../source

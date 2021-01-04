@@ -1,7 +1,7 @@
 ---
 title: Crudini:配置文件编译利器
 date: 2019-08-16 07:55:19
-categories:
+categories: Linux工具
 tags:
   - crudini
 ---

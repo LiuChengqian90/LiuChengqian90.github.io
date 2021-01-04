@@ -1,7 +1,7 @@
 ---
 title: 解析Docker网络架构
 date: 2020-12-07 11:05:19
-categories:
+categories: 容器
 tags:
   - docker
 typora-root-url: ../../../source
@@ -417,7 +417,7 @@ docker 目前的ns存储在`/var/run/docker/netns`目录
 my-overlay 网络信息
 
 ```shell
-# # nsenter --net=/var/run/docker/netns/1-7fe9ew67wh ip a
+# nsenter --net=/var/run/docker/netns/1-7fe9ew67wh ip a
 ```
 
 ![image-20210103181822986](/images/解析Docker网络架构/DOCKER-NET-AR-15.png)
