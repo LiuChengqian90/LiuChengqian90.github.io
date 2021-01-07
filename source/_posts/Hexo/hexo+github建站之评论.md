@@ -8,9 +8,73 @@ tags:
 
 hexo搭建的博客下，有多种评论系统可供选择：Disqus、多说和友言等。
 <!--more-->
-## 畅言
-
 ## Valine
+
+[Valine](https://valine.js.org/)是基于Leancloud的评论系统，无需额外注册账号，无后端，Next可完美适配（最新的Next删除的Valine，不过之前的[Next](https://github.com/theme-next/hexo-theme-next)代码库可以）。
+
+### 注册 LeanCloud
+
+[LeanCloud官网登录入口](https://leancloud.cn/dashboard/login.html#/signin)
+
+1. 注册登陆后，访问控制台，**创建应用，选择开发版**
+
+2. 创建好之后就生成了 `App ID` 和 `App Key`，之后再设置 -> 应用keys也可以查到
+
+3. 点击存储，查看是否有`Comment`和 `Counter`，没有则创建，权限设为无限制
+
+4. 然后点击设置 > 安全中心 ,将除了数据存储的服务全部关闭。
+
+5. 配置Next主题`_config.yaml`文件
+
+   ```yaml
+   # Valine
+   # For more information: https://valine.js.org, https://github.com/xCss/Valine
+   valine:
+     enable: true
+     appid:  # Your leancloud application appid
+     appkey:  # Your leancloud application appkey
+     notify: false # Mail notifier
+     verify: false # Verification code
+     placeholder: Just go go # Comment box placeholder
+     avatar: mm # Gravatar style
+     guest_info: nick,mail,link # Custom comment header
+     pageSize: 10 # Pagination size
+     language: # Language, available values: en, zh-cn
+     visitor: false # Article reading statistic
+     comment_count: true # If false, comment count will only be displayed in post page, not in home page
+     recordIP: false # Whether to record the commenter IP
+     serverURLs: # When the custom domain name is enabled, fill it in here (it will be detected automatically by default, no need to fill in)
+     #post_meta_order: 0
+   ```
+
+
+
+### 其他设置
+
+[Valine](https://valine.js.org/)支持头像配置、邮件提醒、多语言支持、文章阅读量统计及自定义表情。
+
+
+
+#### 指定文章（页面）评论功能是否开启
+
+在 Hexo 博客中，评论的功能是在所有页面都默认开启的，但是有的时候我们在页面上不需要显示评论功能，例如分类，标记页面我们并不需要评论功能。
+
+我们可以在 Front-matter 中通过`comments`属性设置true或false控制该页面或者是文章的评论功能是否打开，如我设置标签页面的评论功能关闭：
+
+```yaml
+title: 标签
+date: 2019-07-18 15:16:50
+type: "tags"
+comments: false
+```
+
+
+
+#### 自定义头像
+
+[头像配置](https://valine.js.org/avatar.html)
+
+
 
 ## Gitment
 
