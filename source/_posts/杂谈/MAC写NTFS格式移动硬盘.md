@@ -1,8 +1,9 @@
 ---
 title: MAC写NTFS格式移动硬盘
 date: 2020-09-04 16:33:21
-categories:
+categories: 杂谈
 tags:
+  - MAC
 ---
 
 **无需安装软件即可让MAC读写NTFS格式移动硬盘**
