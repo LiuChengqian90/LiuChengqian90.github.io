@@ -39,7 +39,7 @@ Centos 安装 npm
 #install nmp
 
 curl -sL https://rpm.nodesource.com/setup_10.x | bash -
-yum install –y nodejs autoconf automake
+yum -y install gcc automake autoconf libtool make nodejs
 node -v
 
 #clean npm
