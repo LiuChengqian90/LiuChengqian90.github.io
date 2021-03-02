@@ -1,4 +1,13 @@
 
+
+docker 镜像位置：
+https://hub.docker.com 
+
+centos7.6部署环境
+curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+systemctl start docker
+
+
 1. 导出容器
 docker export 1e560fca3906 > centos.tar
 

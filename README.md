@@ -43,8 +43,7 @@ yum -y install gcc automake autoconf libtool make nodejs
 node -v
 
 #clean npm
-rm node_modules package-lock.json* -rf;
-npm cache verify;
+rm node_modules package-lock.json* -rf;npm cache verify;
 npm i -g npm;
 npm i;
 
@@ -56,8 +55,9 @@ npm install hexo-generator-feed --save;
 npm install hexo-generator-sitemap --save;
 
 #install gulp
+#https://www.voidking.com/dev-hexo-gulp/
 npm install -g gulp gulp-cli;
-npm install gulp-htmlclean gulp-htmlmin gulp-minify-css gulp-uglify gulp-imagemin --save;
+npm install gulp-htmlclean gulp-htmlmin gulp-clean-css gulp-uglify gulp-imagemin --save;
 
 单机调试：
 hexo clean; hexo g; gulp; hexo s;
