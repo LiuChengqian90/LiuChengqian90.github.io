@@ -55,9 +55,11 @@ npm install hexo-generator-feed --save;
 npm install hexo-generator-sitemap --save;
 
 #install gulp
-#https://www.voidking.com/dev-hexo-gulp/
-npm install -g gulp gulp-cli;
-npm install gulp-htmlclean gulp-htmlmin gulp-clean-css gulp-uglify gulp-imagemin --save;
+npm install -g gulp-cli
+npm install gulp --save
+npm install gulp-htmlclean gulp-htmlmin gulp-clean-css gulp-uglify gulp-imagemin --save
+npm install gulp-babel babel-preset-env babel-preset-mobx --save
+npm install -D @babel/core @babel/preset-react @babel/preset-env --save
 
 单机调试：
 hexo clean; hexo g; gulp; hexo s;
