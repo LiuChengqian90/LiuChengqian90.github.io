@@ -49,7 +49,8 @@ gulp.task('minify-js', function() {
     .src(`${root}/${pattern}.js`)
     .pipe(
       babel({
-        presets: ['env']
+        //presets: ['env']
+        presets: ['@babel/preset-env']
       })
     )
     .pipe(uglify())

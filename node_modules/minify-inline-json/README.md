@@ -3,7 +3,7 @@ Node.js module to minify inlined/embedded JSON data within script tags.
 
 [![NPM](https://nodei.co/npm/minify-inline-json.png?downloads=true)](https://nodei.co/npm/minify-inline-json/)
 
-[![Build Status](https://travis-ci.org/haensl/minify-inline-json.svg?branch=master)](https://travis-ci.org/haensl/minify-inline-json)
+[![CircleCI](https://circleci.com/gh/haensl/minify-inline-json.svg?style=svg)](https://circleci.com/gh/haensl/minify-inline-json)
 
 ## Installation
 
