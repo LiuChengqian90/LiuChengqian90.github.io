@@ -13,6 +13,8 @@ tags:
 
 数组中可以存放多个值。Bash Shell 只支持一维数组（不支持多维数组），初始化时不需要定义数组大小。
 
+<!--more-->
+
 ```shell
 array_name=(value1 value2 ... valuen)
 ```
