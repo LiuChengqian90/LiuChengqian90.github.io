@@ -493,7 +493,7 @@ $ docker pull ubuntu:13.10
 $ docker search httpd
 ```
 
-![docker-search-httpd.png](/images/Docker简介/docker-search-httpd.png)
+![docker-search-httpd](/images/Docker简介/docker-search-httpd.png)
 
 **NAME:** 镜像仓库源的名称
 
