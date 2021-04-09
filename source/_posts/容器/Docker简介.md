@@ -1423,7 +1423,7 @@ services:
 - labels：设置构建镜像的标签。
 - target：多层构建，可以指定构建哪一层。
 
-#### cap_add，cap_drop
+#### cap_add,cap_drop
 
 添加或删除容器拥有的宿主机的内核功能。
 
