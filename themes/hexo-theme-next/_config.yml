@@ -606,6 +606,25 @@ changyan:
   appid:
   appkey:
 
+# Valine
+# For more information: https://valine.js.org, https://github.com/xCss/Valine
+valine:
+  enable: true 
+  appId: OxuGm1sftgvx1pybK4fNvWEI-gzGzoHsz # Your leancloud application appid
+  appKey: wVNroDGKbkHDfo8jS43cWkzo # Your leancloud application appkey
+  notify: false # Mail notifier
+  verify: false # Verification code
+  placeholder: Just go go # Comment box placeholder
+  avatar: mm # Gravatar style
+  guest_info: nick,mail,link # Custom comment header
+  pageSize: 10 # Pagination size
+  language: # Language, available values: en, zh-cn
+  visitor: false # Article reading statistic
+  comment_count: true # If false, comment count will only be displayed in post page, not in home page
+  recordIP: false # Whether to record the commenter IP
+  serverURLs: # When the custom domain name is enabled, fill it in here (it will be detected automatically by default, no need to fill in)
+  #post_meta_order: 0
+
 # LiveRe comments system
 # You can get your uid from https://livere.com/insight/myCode (General web site)
 livere_uid: # <your_uid>
