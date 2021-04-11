@@ -40,7 +40,15 @@ collect2: error: ld returned 1 exit status
 make: *** [envdir] Error 1
 ```
 
-则编辑src/conf-cc，加gcc加上`-include /usr/include/errno.h` 使用标准错误即可。
+
+
+解决方案
+
+```
+将admin/daemontools-0.76/src/error.h中的extern int errno; 替换为 #include <errno.h>
+```
+
+
 
 验证安装：
 
