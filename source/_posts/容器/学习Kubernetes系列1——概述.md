@@ -1,5 +1,5 @@
 ---
-title: 学习Kubernetes系列——概述
+title: 学习Kubernetes系列1——概述
 date: 2021-05-05 09:57:52
 categories:
 tags:
@@ -94,7 +94,7 @@ Kubernetes 提供了一个**可弹性运行分布式系统的框架**。 Kuberne
 
 # Kubernetes 组件
 
-先提前熟悉两个概念，Pod和节点(Node)。
+先提前熟悉两个概念，**Pod和节点(Node)**。
 
 *Pod* 是可以在 Kubernetes 中创建和管理的、**最小的可部署的计算单元**。是 Kubernetes 抽象出来的，表示一组（**一个或多个**）应用程序容器（如 Docker），以及这些容器的一些共享资源。这些资源包括:
 

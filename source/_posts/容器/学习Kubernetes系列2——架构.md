@@ -1,5 +1,5 @@
 ---
-title: 学习Kubernetes系列——架构
+title: 学习Kubernetes系列2——架构
 date: 2021-05-15 19:50:55
 categories:
 tags:
