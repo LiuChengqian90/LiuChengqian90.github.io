@@ -7,6 +7,8 @@ centos7.6部署环境
 curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
 systemctl start docker
 
+docker pull liuchengqian/centos:hexo_done
+docker run -itd --name $name $image-id
 
 1. 导出容器
 docker export 1e560fca3906 > centos.tar
