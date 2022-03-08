@@ -1,0 +1,1 @@
+"use strict";window.NexT||(window.NexT={}),window.CONFIG||(window.CONFIG=JSON.parse(document.querySelector('meta[name="hexo-config"]').content||"{}")),document.querySelectorAll('meta[name^="hexo-config-"]').forEach(function(e){var n=e.name.slice("hexo-config-".length);window.CONFIG[n]=JSON.parse(e.content||"{}")});
