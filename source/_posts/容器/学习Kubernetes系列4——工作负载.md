@@ -1,6 +1,6 @@
 ---
 title: 学习Kubernetes系列4——工作负载
-date: 2021-06-22 15:22:33
+date: 2021-06-18 15:22:33
 categories:
 tags:
   - Kubernetes

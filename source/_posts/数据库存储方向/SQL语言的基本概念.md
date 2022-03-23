@@ -1,6 +1,6 @@
 ---
 title: SQL语言的基本概念
-date: 2022-02-27 19:57:52
+date: 2021-07-02 19:57:52
 categories: 数据库
 tags:
   - DDL
