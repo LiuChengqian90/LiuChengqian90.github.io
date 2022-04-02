@@ -1,0 +1,105 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=2"><meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.0"><link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png"><link rel="mask-icon" href="/images/logo.svg" color="#222"><link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css"><meta name="hexo-config" content="{&quot;hostname&quot;:&quot;chengqian90.com&quot;,&quot;root&quot;:&quot;/&quot;,&quot;images&quot;:&quot;/images&quot;,&quot;scheme&quot;:&quot;Muse&quot;,&quot;version&quot;:&quot;8.3.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;left&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12},&quot;copycode&quot;:false,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:false,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:null,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:true,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;fadeInDown&quot;,&quot;post_body&quot;:&quot;fadeInDown&quot;,&quot;coll_header&quot;:&quot;fadeInLeft&quot;,&quot;sidebar&quot;:&quot;fadeInUp&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;},&quot;algolia&quot;:{&quot;appID&quot;:&quot;AF7ILS3DFM&quot;,&quot;apiKey&quot;:&quot;d6766fc778aa1a2b67445c7a40b5dc75&quot;,&quot;indexName&quot;:&quot;hexo_github&quot;,&quot;hits&quot;:{&quot;per_page&quot;:10}}}"><meta name="description" content="在实际工作中，有时会利用while + ssh 远程到多个server执行命令的需求，但是写shell时发现，脚本只能执行一次循环 1234567#!&#x2F;bin&#x2F;shwhile read linedo    echo &quot;$&amp;#123;line&amp;#125; start&quot;    ssh line &amp;#x27;lscpu&amp;#x27;    echo &quot;$&amp;#123;line&amp;"><meta property="og:type" content="article"><meta property="og:title" content="当while read line 遇到 ssh"><meta property="og:url" content="http://chengqian90.com/Linux%E5%B7%A5%E5%85%B7/%E5%BD%93while%20read%20line%20%E9%81%87%E5%88%B0%20ssh.html"><meta property="og:site_name" content="小刘的杂货铺"><meta property="og:description" content="在实际工作中，有时会利用while + ssh 远程到多个server执行命令的需求，但是写shell时发现，脚本只能执行一次循环 1234567#!&#x2F;bin&#x2F;shwhile read linedo    echo &quot;$&amp;#123;line&amp;#125; start&quot;    ssh line &amp;#x27;lscpu&amp;#x27;    echo &quot;$&amp;#123;line&amp;"><meta property="og:locale" content="zh_CN"><meta property="article:published_time" content="2022-01-15T07:57:52.000Z"><meta property="article:modified_time" content="2022-04-02T09:58:08.458Z"><meta property="article:author" content="Chengqian"><meta property="article:tag" content="ssh"><meta property="article:tag" content="while"><meta name="twitter:card" content="summary"><link rel="canonical" href="http://chengqian90.com/Linux%E5%B7%A5%E5%85%B7/%E5%BD%93while%20read%20line%20%E9%81%87%E5%88%B0%20ssh.html"><meta name="hexo-config-page" content="{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;}"><meta name="hexo-config-calendar" content=""><title>当while read line 遇到 ssh | 小刘的杂货铺</title><script data-pjax src="/js/load-config.js"></script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-119899037-1"></script><script>if(CONFIG.hostname===location.hostname){function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","UA-119899037-1")}</script><script>var _hmt=_hmt||[];!function(){var e=document.createElement("script");e.src="https://hm.baidu.com/hm.js?c9b18612675d198048222a1c96dd7555";var t=document.getElementsByTagName("script")[0];t.parentNode.insertBefore(e,t)}()</script><noscript><link rel="stylesheet" href="/css/noscript.css"></noscript><link rel="alternate" href="/atom.xml" title="小刘的杂货铺" type="application/atom+xml"></head><body itemscope itemtype="http://schema.org/WebPage" class="use-motion"><div class="headband"></div><main class="main"><header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="header-inner"><div class="site-brand-container"><div class="site-nav-toggle"><div class="toggle" aria-label="切换导航栏" role="button"><span class="toggle-line"></span><span class="toggle-line"></span><span class="toggle-line"></span></div></div><div class="site-meta"><a href="/" class="brand" rel="start"><i class="logo-line"></i><h1 class="site-title">小刘的杂货铺</h1><i class="logo-line"></i></a><p class="site-subtitle" itemprop="description">In order to be irreplaceable, one must always be different</p></div><div class="site-nav-right"><div class="toggle popup-trigger"><i class="fa fa-search fa-fw fa-lg"></i></div></div></div><nav class="site-nav"><ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-top"><a href="/top/" rel="section"><i class="fa fa-signal fa-fw"></i>top</a></li><li class="menu-item menu-item-search"><a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i> 搜索</a></li></ul></nav><div class="search-pop-overlay"><div class="popup search-popup"><div class="search-header"><span class="search-icon"><i class="fa fa-search"></i></span><div class="search-input-container"></div><span class="popup-btn-close" role="button"><i class="fa fa-times-circle"></i></span></div><div class="search-result-container"><div class="algolia-stats"><hr></div><div class="algolia-hits"></div><div class="algolia-pagination"></div></div></div></div></div><div class="toggle sidebar-toggle" role="button"><span class="toggle-line"></span><span class="toggle-line"></span><span class="toggle-line"></span></div><aside class="sidebar"><div class="sidebar-inner sidebar-overview-active"><ul class="sidebar-nav"><li class="sidebar-nav-toc"> 文章目录</li><li class="sidebar-nav-overview"> 站点概览</li></ul><div class="sidebar-panel-container"><div class="post-toc-wrap sidebar-panel"></div><div class="site-overview-wrap sidebar-panel"><div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person"><p class="site-author-name" itemprop="name">Chengqian</p><div class="site-description" itemprop="description">内核/云计算/网络</div></div><div class="site-state-wrap site-overview-item animated"><nav class="site-state"><div class="site-state-item site-state-posts"> <a href="/archives"><span class="site-state-item-count">94</span> <span class="site-state-item-name">日志</span></a></div><div class="site-state-item site-state-categories"> <a href="/categories/"><span class="site-state-item-count">14</span> <span class="site-state-item-name">分类</span></a></div><div class="site-state-item site-state-tags"> <a href="/tags/"><span class="site-state-item-count">149</span> <span class="site-state-item-name">标签</span></a></div></nav></div></div></div></div></aside><div class="sidebar-dimmer"></div></header><div class="back-to-top" role="button" aria-label="返回顶部"><i class="fa fa-arrow-up"></i> <span>0%</span></div><noscript><div class="noscript-warning">Theme NexT works best with JavaScript enabled</div></noscript><div class="main-inner post posts-expand"><div class="post-block"><article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN"><link itemprop="mainEntityOfPage" href="http://chengqian90.com/Linux%E5%B7%A5%E5%85%B7/%E5%BD%93while%20read%20line%20%E9%81%87%E5%88%B0%20ssh.html"><span hidden itemprop="author" itemscope itemtype="http://schema.org/Person"><meta itemprop="image" content="/images/avatar.gif"><meta itemprop="name" content="Chengqian"><meta itemprop="description" content="内核/云计算/网络"></span><span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization"><meta itemprop="name" content="小刘的杂货铺"></span><header class="post-header"><h1 class="post-title" itemprop="name headline"> 当while read line 遇到 ssh</h1><div class="post-meta-container"><div class="post-meta"><span class="post-meta-item"><span class="post-meta-item-icon"><i class="far fa-calendar"></i></span> <span class="post-meta-item-text">发表于</span> <time title="创建时间：2022-01-15 15:57:52" itemprop="dateCreated datePublished" datetime="2022-01-15T15:57:52+08:00">2022-01-15</time></span><span class="post-meta-item"><span class="post-meta-item-icon"><i class="far fa-calendar-check"></i></span> <span class="post-meta-item-text">更新于</span> <time title="修改时间：2022-04-02 17:58:08" itemprop="dateModified" datetime="2022-04-02T17:58:08+08:00">2022-04-02</time></span><span class="post-meta-item"><span class="post-meta-item-icon"><i class="far fa-folder"></i></span> <span class="post-meta-item-text">分类于</span> <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Linux%E5%B7%A5%E5%85%B7/" itemprop="url" rel="index"><span itemprop="name">Linux工具</span></a></span></span><span id="/Linux%E5%B7%A5%E5%85%B7/%E5%BD%93while%20read%20line%20%E9%81%87%E5%88%B0%20ssh.html" class="post-meta-item leancloud_visitors" data-flag-title="当while read line 遇到 ssh" title="阅读次数"><span class="post-meta-item-icon"><i class="far fa-eye"></i></span> <span class="post-meta-item-text">阅读次数：</span><span class="leancloud-visitors-count"></span></span></div><div class="post-meta"><span class="post-meta-item" title="本文字数"><span class="post-meta-item-icon"><i class="far fa-file-word"></i></span> <span class="post-meta-item-text">本文字数：</span> <span>486</span></span><span class="post-meta-item" title="阅读时长"><span class="post-meta-item-icon"><i class="far fa-clock"></i></span> <span class="post-meta-item-text">阅读时长 &asymp;</span> <span>1 分钟</span></span></div></div></header><div class="post-body" itemprop="articleBody"><p>在实际工作中，有时会利用while + ssh 远程到多个server执行命令的需求，但是写shell时发现，脚本只能执行一次循环</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/sh</span></span><br><span class="line">while read line</span><br><span class="line">do</span><br><span class="line">    echo &quot;$&#123;line&#125; start&quot;</span><br><span class="line">    ssh line &#x27;lscpu&#x27;</span><br><span class="line">    echo &quot;$&#123;line&#125; end&quot;</span><br><span class="line">done &lt; $1</span><br></pre></td></tr></table></figure><p><strong>原因：</strong> read 从stdin读取数据，’&lt;’ 将文件重定向到stdin。而不幸的是，脚本试图运行的命令(ssh)也读取stdin，因此它最终会吃掉文件的其余部分。</p><p><strong>解决方案</strong></p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/sh</span></span><br><span class="line"></span><br><span class="line">while read -u10 line</span><br><span class="line">do</span><br><span class="line">    echo &quot;$&#123;line&#125; start&quot;</span><br><span class="line">    ssh liuchengqian@$line &#x27;lscpu&#x27;</span><br><span class="line">    echo &quot;$&#123;line&#125; end&quot;</span><br><span class="line">done 10&lt; $1</span><br></pre></td></tr></table></figure><p>参考，<a target="_blank" rel="noopener" href="https://unix.stackexchange.com/questions/107800/using-while-loop-to-ssh-to-multiple-servers">Using while loop to ssh to multiple servers</a></p></div><footer class="post-footer"><div class="post-tags"> <a href="/tags/ssh/" rel="tag"># ssh</a> <a href="/tags/while/" rel="tag"># while</a></div><div class="post-nav"><div class="post-nav-item"><a href="/%E6%9D%82%E8%B0%88/PXE%E8%A3%85%E6%9C%BA%E7%AE%80%E4%BB%8B.html" rel="prev" title="PXE装机简介"><i class="fa fa-chevron-left"></i> PXE装机简介</a></div><div class="post-nav-item"> <a href="/Linux%E5%86%85%E6%A0%B8/BFD%E4%B8%8EBGP%E8%81%94%E5%8A%A8%E5%AE%9E%E7%8E%B0%E8%B7%AF%E7%94%B1%E5%BF%AB%E9%80%9F%E6%94%B6%E6%95%9B.html" rel="next" title="BFD与BGP联动实现路由快速收敛">BFD与BGP联动实现路由快速收敛<i class="fa fa-chevron-right"></i></a></div></div></footer></article></div><div class="comments" id="lv-container" data-id="city" data-uid="MTAyMC81MzIyNS8yOTcwMA=="></div><script src="/js/comments.js"></script></div></main><footer class="footer"><div class="footer-inner"><div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备18025897号-1</a></div><div class="copyright"> &copy; <span itemprop="copyrightYear">2022</span><span class="with-love"><i class="fa fa-heart"></i></span> <span class="author" itemprop="copyrightHolder">Chengqian</span></div><div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动</div></div></footer><script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.8.6/dist/algoliasearch-lite.umd.js"></script><script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.19.0/dist/instantsearch.production.min.js"></script><script src="/js/algolia-search.js"></script><script>
+  (function() {
+    function leancloudSelector(url) {
+      url = encodeURI(url);
+      return document.getElementById(url).querySelector('.leancloud-visitors-count');
+    }
+
+    function addCount(Counter) {
+      const visitors = document.querySelector('.leancloud_visitors');
+      const url = decodeURI(visitors.id);
+      const title = visitors.dataset.flagTitle;
+
+      Counter('get', '/classes/Counter?where=' + encodeURIComponent(JSON.stringify({ url })))
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            const counter = results[0];
+            leancloudSelector(url).innerText = counter.time + 1;
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .catch(error => {
+                console.error('Failed to save visitor count', error);
+              });
+          } else {
+              Counter('post', '/classes/Counter', { title, url, time: 1 })
+                .then(response => response.json())
+                .then(() => {
+                  leancloudSelector(url).innerText = 1;
+                })
+                .catch(error => {
+                  console.error('Failed to create', error);
+                });
+          }
+        })
+        .catch(error => {
+          console.error('LeanCloud Counter Error', error);
+        });
+    }
+
+    function showTime(Counter) {
+      const visitors = document.querySelectorAll('.leancloud_visitors');
+      const entries = [...visitors].map(element => {
+        return decodeURI(element.id);
+      });
+
+      Counter('get', '/classes/Counter?where=' + encodeURIComponent(JSON.stringify({ url: { '$in': entries } })))
+        .then(response => response.json())
+        .then(({ results }) => {
+          for (let url of entries) {
+            const target = results.find(item => item.url === url);
+            leancloudSelector(url).innerText = target ? target.time : 0;
+          }
+        })
+        .catch(error => {
+          console.error('LeanCloud Counter Error', error);
+        });
+    }
+
+    const { app_id, app_key, server_url } = {"enable":true,"app_id":"OxuGm1sftgvx1pybK4fNvWEI-gzGzoHsz","app_key":"wVNroDGKbkHDfo8jS43cWkzo","server_url":null,"security":false};
+    function fetchData(api_server) {
+      const Counter = (method, url, data) => {
+        return fetch(`${api_server}/1.1${url}`, {
+          method,
+          headers: {
+            'X-LC-Id'     : app_id,
+            'X-LC-Key'    : app_key,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        if (CONFIG.hostname !== location.hostname) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    }
+
+    const api_server = app_id.slice(-9) === '-MdYXbMMI' ? `https://${app_id.slice(0, 8).toLowerCase()}.api.lncldglobal.com` : server_url;
+
+    if (api_server) {
+      fetchData(api_server);
+    } else {
+      fetch('https://app-router.leancloud.cn/2/route?appId=' + app_id)
+        .then(response => response.json())
+        .then(({ api_server }) => {
+          fetchData('https://' + api_server);
+        });
+    }
+  })();
+</script><script>
+NexT.utils.loadComments('#lv-container', () => {
+  window.livereOptions = {
+    refer: "Linux工具/当while read line 遇到 ssh.html"
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script></body></html>
