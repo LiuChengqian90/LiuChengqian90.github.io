@@ -9,6 +9,8 @@ tags:
 
 在实际工作中，有时会利用while + ssh 远程到多个server执行命令的需求，但是写shell时发现，脚本只能执行一次循环
 
+<!--more-->
+
 ```shell
 #!/bin/sh
 while read line
