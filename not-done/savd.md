@@ -67,3 +67,21 @@ Linux 链接跟踪
    2. <https://blog.csdn.net/liangyuannao/article/details/8622502>
 
 https://blog.csdn.net/yueyue200830/article/details/104470646
+
+
+
+SR-IOV、PF、VF
+
+SR-IOV 简介 https://docs.oracle.com/cd/E37934_01/html/E36756/glbzi.html
+
+[【网络】什么是SR-IOV、PF、VF|DPDK vs SR-IOV for NFV](https://blog.csdn.net/bandaoyu/article/details/121852974)
+
+http://blog.chinaunix.net/uid-7374279-id-5838090.html
+
+https://www.pcietech.com/424.html/
+
+https://www.cnblogs.com/jmilkfan-fanguiju/p/12789758.html
+
+https://zdyxry.github.io/2020/03/12/SR-IOV-%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/
+
+http://www.yanjun.pro/?p=125
